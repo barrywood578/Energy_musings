@@ -1,0 +1,9 @@
+All .xls source files were taken from the following URL:
+
+https://www.bchydro.com/energy-in-bc/operations/transmission/transmission-system/balancing-authority-load-data/historical-transmission-data.html
+
+They were then saved as .xlsx files, with no text changes.
+
+The .xlsx files were loaded using BC_Spreadsheet_Files.py, converted and
+printed to yield load_db_BC.txt.
+
