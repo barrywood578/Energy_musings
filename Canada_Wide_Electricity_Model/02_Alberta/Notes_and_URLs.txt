@@ -1,0 +1,10 @@
+The source file was originally taken from the following URL: 
+
+https://www.aeso.ca/market/market-and-system-reporting/data-requests/hourly-metered-volumes-and-pool-price-and-ail-data-2008-to-2020/
+
+The comma separated values (.csv) file was converted to an Excel spreadsheet
+without changing any data.
+
+The Excel spreadsheet was read by the AB_Spreadsheet_Files.py application,
+the date and time information, along with the Alberta Internal Load (AIL),
+was extracted, and the data written to the load_db_AB.txt file.
