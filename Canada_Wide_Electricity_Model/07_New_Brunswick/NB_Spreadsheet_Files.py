@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 """
-    Support for New Brunswich Comma Separated Values files.
+    Support for New Brunswick Comma Separated Values files.
 
     Computes UTC time for each local date/time,
     and outputs a load file in standard format.
@@ -163,11 +163,11 @@ class NBSpreadsheetFiles(object):
         self.demand_file.write_demand_file()
 
 def create_parser():
-    parser = OptionParser(description="Support for New Brunswich Hourly Load CSV files.")
+    parser = OptionParser(description="Support for New Brunswick Hourly Load CSV files.")
     parser.add_option('-c', '--csv',
             dest = 'csv_file_paths',
             action = 'append', type = 'string', default = [],
-            help = 'File path to New Brunswich format CSV file.',
+            help = 'File path to New Brunswick format CSV file.',
             metavar = 'FILE')
     parser.add_option('-a', '--all',
             dest = 'all_csv_files',
