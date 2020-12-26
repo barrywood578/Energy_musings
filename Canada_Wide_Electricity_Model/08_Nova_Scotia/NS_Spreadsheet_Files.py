@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 """
-    Support for British Columbia XLSX spreadsheet.
+    Support for Nova Scotia Comma Separated Values load files.
 
     Computes UTC time for each local date/time,
     and outputs a load file in standard format.
