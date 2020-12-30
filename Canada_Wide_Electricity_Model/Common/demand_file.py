@@ -143,10 +143,12 @@ class demand_file(object):
             self.xref_load[d_hr.UTC_Y][d_hr.UTC_M][d_hr.UTC_D] = {}
 
         if d_hr.UTC_H in self.xref_load[d_hr.UTC_Y][d_hr.UTC_M][d_hr.UTC_D]:
-            raise ValueError("File %s Line %s Duplicate UTC hour %s in file!" %
-                         (d_hr.file_path, str(d_hr.line_num), str(d_hr.UTC_H)))
+            raise ValueError(
+                "File %s Line %s Duplicate UTC hour %s! Original %s" %
+                (d_hr.file_path, str(d_hr.line_num), str(d_hr.UTC_H),
+                 self.xref_load[d_hr.UTC_Y][d_hr.UTC_M][d_hr.UTC_D][d_hr.UTC_H]))
 
-        self.xref_load[d_hr.UTC_Y][d_hr.UTC_M][d_hr.UTC_D][d_hr.UTC_H] = float(d_hr.demand_MW)
+        self.xref_load[d_hr.UTC_Y][d_hr.UTC_M][d_hr.UTC_D][d_hr.UTC_H] = d_hr.file_path
 
     def add_demand_hour(self, field_list):
         d_hr = demand_hour(field_list)
