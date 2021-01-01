@@ -119,10 +119,10 @@ class demand_file(object):
                     (self.lines[0], self.demand_file_header))
 
         for line, line_num in enumerate(self.lines):
-            if ((line[0] != BEGIN_END) or (line[-1] != BEGIN_END)):
+            if ((line[0] != START_END) or (line[-1] != START_END)):
                 raise ValueError("File %s Line %d delimiters '%s' '%s' not '%s'"
                                  "'%s'. Halting." %
-                                 (line[0], line[-1], BEGIN_END, BEGIN_END))
+                                 (line[0], line[-1], START_END, START_END))
             toks = [tok.strip() for tok in line[1:-1].split(SEPARATOR)]
 
             try:

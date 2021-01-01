@@ -111,9 +111,9 @@ class TestDemandHour(unittest.TestCase):
         demand.add_demand_hour(list_2)
         demand.add_demand_hour(list_3)
 
-        self.assertEqual(demand.xref_load["2006"]["01"]["02"]["03"], 10203.7)
-        self.assertEqual(demand.xref_load["2006"]["02"]["03"]["04"], 20304.7)
-        self.assertEqual(demand.xref_load["2007"]["02"]["03"]["05"], 123456.7)
+        self.assertEqual(demand.xref_load["2006"]["01"]["02"]["03"], "path 1")
+        self.assertEqual(demand.xref_load["2006"]["02"]["03"]["04"], "path 2")
+        self.assertEqual(demand.xref_load["2007"]["02"]["03"]["05"], "path 3")
 
     def test_add_demand_hour_failure(self):
         list_1 = ["path 1", "line 1", "2006", "01", "02", "03",
