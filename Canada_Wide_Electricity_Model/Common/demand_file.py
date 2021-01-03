@@ -79,6 +79,9 @@ class demand_hour(object):
                 self.demand_MW]
 
     def set_demand_hour_to_list(self, the_list):
+        if not (len(the_list) == 11):
+            raise ValueError("List must have 11 entries, not '%s'" %
+                              ','.join(the_list))
         self.file_path = str(the_list[0])
         self.line_num  = str(the_list[1])
         self.UTC_Y     = str(the_list[2])
@@ -95,42 +98,37 @@ class demand_file(object):
     demand_file_header = "File, LineNum, UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)"
 
     def __init__(self, file_path = ""):
-        self.lines = []
         self.dbase = []
         self.xref_load = {}
 
         if (file_path == ""):
             return
-
-        try:
-            self.read_and_parse_file(file_path)
-        except ValueError as e:
-            print(e)
-            sys.exit(-1)
+        self.read_demand_file(file_path)
 
     def read_demand_file(self, path):
-        self.lines = []
+        lines = []
 
-        with open(path, 'r') as demand_file:
-            lines = [line.strip() for line in demand_file.readlines()]
+        with open(path, 'r') as the_file:
+            lines = [line.strip() for line in the_file.readlines()]
 
-        if (self.lines[0] != self.demand_file_header):
+        if (lines[0] != self.demand_file_header):
             raise ValueError("File header is '%s', not '%s'.  Halting." %
-                    (self.lines[0], self.demand_file_header))
+                    (lines[0], self.demand_file_header))
 
-        for line, line_num in enumerate(self.lines):
+        for line_num, line in enumerate(lines[1:]):
             if ((line[0] != START_END) or (line[-1] != START_END)):
                 raise ValueError("File %s Line %d delimiters '%s' '%s' not '%s'"
                                  "'%s'. Halting." %
-                                 (line[0], line[-1], START_END, START_END))
+                                 (path, line_num+1, line[0], line[-1],
+                                                START_END, START_END))
             toks = [tok.strip() for tok in line[1:-1].split(SEPARATOR)]
 
             try:
                 self.add_demand_hour(toks)
             except ValueError as e:
-                print(e)
+                print(str(e))
                 raise ValueError("File %s Line %d Invalid format '%s'" %
-                        (path, line_num))
+                        (path, line_num+1, line))
 
     def add_xref_load(self, d_hr):
         if not d_hr.UTC_Y in self.xref_load:
@@ -174,7 +172,7 @@ def create_parser():
     parser = OptionParser(description="Demand file support.")
     parser.add_option('-d', '--demand',
             dest = 'demand_file_paths',
-            action = 'assign', type = 'string', default = "",
+            action = 'store', type = 'string', default = "",
             help = 'File path to demand file.',
             metavar = 'FILE')
     return parser
@@ -194,7 +192,7 @@ def main(argv = None):
         return -1
 
     demand = demand_file(options.demand_file_paths)
-    ssheet.print_db()
+    demand.write_demand_file()
 
 if __name__ == '__main__':
     sys.exit(main())
