@@ -1,21 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 """
-    Support for the common "generation file" file format.
+    Unit test for "generation file" support.
 
-    Each file line is an instance of:
-    Fuel, Capacity in MW, GHG per MWh, timezone
 
 """
 
-from optparse import OptionParser
-from collections import OrderedDict
-import operator
-import sys
-import os
-import logging
-from datetime import datetime, timezone
-from common_defs import *
 from generator_file import generator, generator_file
 
 import unittest
@@ -234,6 +224,8 @@ class TestGeneratorFile(unittest.TestCase):
                  call("'NatGas', '1001.0', '20.0', 'America/Regina'"),
                  call("'Nuclear', '1002.0', '1.0', 'America/Toronto'"),
                  call("'SolarPV', '1003.0', '15.0', 'America/Vancouver'")]
+        self.assertEqual(mock_print.call_count, 1)
         mock_print.assert_has_calls(calls, any_order = False)
+
 if __name__ == '__main__':
     unittest.main()
