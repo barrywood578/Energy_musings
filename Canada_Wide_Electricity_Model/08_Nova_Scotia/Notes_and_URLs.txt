@@ -17,4 +17,4 @@ Only the first 11 months of data are available for 2020.
 December 2020 values will be added in the new year.
 
 Data was captured using the following command:
-./NS_Spreadsheet_Files.py -a -y 2020 > load_file_NS.txt
+./NS_Spreadsheet_Files.py -a -y 2020 > load_db_NS.txt

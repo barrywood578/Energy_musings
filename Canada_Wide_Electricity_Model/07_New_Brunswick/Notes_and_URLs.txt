@@ -5,3 +5,7 @@ https://tso.nbpower.com/Public/en/system_information_archive.aspx
 Some demand files had "NA" measurements.  The measurements
 were replaced with values interpolated between the last and
 next known values.
+
+The load file is generated with the following command:
+./NB_Spreadsheet_Files.py -a > load_db_NB.txt
+

@@ -1,0 +1,6 @@
+The demand files are published by IESO at:
+http://reports.ieso.ca/public/Demand/
+
+The demand files are aggregated and checked with the following command:
+./ON_Spreadsheet_Files.py -a > load_db_ON.txt
+
