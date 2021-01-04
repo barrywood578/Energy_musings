@@ -224,7 +224,7 @@ class TestGeneratorFile(unittest.TestCase):
                  call("'NatGas', '1001.0', '20.0', 'America/Regina'"),
                  call("'Nuclear', '1002.0', '1.0', 'America/Toronto'"),
                  call("'SolarPV', '1003.0', '15.0', 'America/Vancouver'")]
-        self.assertEqual(mock_print.call_count, 1)
+        self.assertEqual(mock_print.call_count, 6)
         mock_print.assert_has_calls(calls, any_order = False)
 
 if __name__ == '__main__':
