@@ -6,6 +6,8 @@
 """
 
 from demand_file import demand_hour, demand_file
+from datetime import datetime, timezone
+from common_defs import *
 
 import unittest
 import mock
@@ -105,9 +107,12 @@ class TestDemandHour(unittest.TestCase):
         demand.add_demand_hour(list_2)
         demand.add_demand_hour(list_3)
 
-        self.assertEqual(demand.xref_load["2006"]["01"]["02"]["03"], "path 1")
-        self.assertEqual(demand.xref_load["2006"]["02"]["03"]["04"], "path 2")
-        self.assertEqual(demand.xref_load["2007"]["02"]["03"]["05"], "path 3")
+        self.assertEqual(demand.xref_load["2006"]["1"]["2"]["3"].fp, "path 1")
+        self.assertEqual(demand.xref_load["2006"]["1"]["2"]["3"].mw, 10203.7)
+        self.assertEqual(demand.xref_load["2006"]["2"]["3"]["4"].fp, "path 2")
+        self.assertEqual(demand.xref_load["2006"]["2"]["3"]["4"].mw, 20304.7)
+        self.assertEqual(demand.xref_load["2007"]["2"]["3"]["5"].fp, "path 3")
+        self.assertEqual(demand.xref_load["2007"]["2"]["3"]["5"].mw, 123456.7)
 
     def test_add_demand_hour_failure(self):
         list_1 = ["path 1", "line 1", "2006", "01", "02", "03",
@@ -182,13 +187,15 @@ class TestDemandFile(unittest.TestCase):
             self.assertTrue("2" in df.xref_load["2006"]["11"].keys())
             self.assertEqual(len(df.xref_load["2006"]["11"]["2"].keys()), 1)
             self.assertTrue("8" in df.xref_load["2006"]["11"]["2"].keys())
-            self.assertEqual(df.xref_load["2006"]["11"]["2"]["8"],"test1.xlsx")
+            self.assertEqual(df.xref_load["2006"]["11"]["2"]["8"].fp,"test1.xlsx")
+            self.assertEqual(df.xref_load["2006"]["11"]["2"]["8"].mw,6851.0)
             self.assertTrue("12" in df.xref_load["2006"].keys())
             self.assertEqual(len(df.xref_load["2006"]["12"].keys()), 1)
             self.assertTrue("3" in df.xref_load["2006"]["12"].keys())
             self.assertEqual(len(df.xref_load["2006"]["12"]["3"].keys()), 1)
             self.assertTrue("9" in df.xref_load["2006"]["12"]["3"].keys())
-            self.assertEqual(df.xref_load["2006"]["12"]["3"]["9"],"test2.xlsx")
+            self.assertEqual(df.xref_load["2006"]["12"]["3"]["9"].fp,"test2.xlsx")
+            self.assertEqual(df.xref_load["2006"]["12"]["3"]["9"].mw,6599.9)
 
     def test_init_with_bad_file_header(self):
         file_data = ("Bad Header!\n"
@@ -247,13 +254,15 @@ class TestDemandFile(unittest.TestCase):
             self.assertTrue("2" in df.xref_load["2006"]["11"].keys())
             self.assertEqual(len(df.xref_load["2006"]["11"]["2"].keys()), 1)
             self.assertTrue("8" in df.xref_load["2006"]["11"]["2"].keys())
-            self.assertEqual(df.xref_load["2006"]["11"]["2"]["8"],"test1.xlsx")
+            self.assertEqual(df.xref_load["2006"]["11"]["2"]["8"].fp,"test1.xlsx")
+            self.assertEqual(df.xref_load["2006"]["11"]["2"]["8"].mw, 6851.0)
             self.assertTrue("12" in df.xref_load["2006"].keys())
             self.assertEqual(len(df.xref_load["2006"]["12"].keys()), 1)
             self.assertTrue("3" in df.xref_load["2006"]["12"].keys())
             self.assertEqual(len(df.xref_load["2006"]["12"]["3"].keys()), 1)
             self.assertTrue("9" in df.xref_load["2006"]["12"]["3"].keys())
-            self.assertEqual(df.xref_load["2006"]["12"]["3"]["9"],"test2.xlsx")
+            self.assertEqual(df.xref_load["2006"]["12"]["3"]["9"].fp,"test2.xlsx")
+            self.assertEqual(df.xref_load["2006"]["12"]["3"]["9"].mw, 6580.0)
 
     def test_read_demand_file_bad_file_delim(self):
         file_data = self.file_header + ("\n"
@@ -287,7 +296,8 @@ class TestDemandFile(unittest.TestCase):
             self.assertTrue("2" in df.xref_load["2006"]["11"].keys())
             self.assertEqual(len(df.xref_load["2006"]["11"]["2"].keys()), 1)
             self.assertTrue("8" in df.xref_load["2006"]["11"]["2"].keys())
-            self.assertEqual(df.xref_load["2006"]["11"]["2"]["8"],"test1.xlsx")
+            self.assertEqual(df.xref_load["2006"]["11"]["2"]["8"].fp,"test1.xlsx")
+            self.assertEqual(df.xref_load["2006"]["11"]["2"]["8"].mw, 6851.0)
             mock_file.assert_called_with("TestFile", 'r')
             self.assertTrue( ("File TestFile Line 2 delimiters "
                               "'X' 'Y' not ''''''. Halting.")
@@ -326,7 +336,8 @@ class TestDemandFile(unittest.TestCase):
             self.assertTrue("2" in df.xref_load["2006"]["11"].keys())
             self.assertEqual(len(df.xref_load["2006"]["11"]["2"].keys()), 1)
             self.assertTrue("8" in df.xref_load["2006"]["11"]["2"].keys())
-            self.assertEqual(df.xref_load["2006"]["11"]["2"]["8"],"test1.xlsx")
+            self.assertEqual(df.xref_load["2006"]["11"]["2"]["8"].fp,"test1.xlsx")
+            self.assertEqual(df.xref_load["2006"]["11"]["2"]["8"].mw, 6851.0)
             mock_file.assert_called_with("TestFile", 'r')
             #print("\n%s" % str(context.exception))
             self.assertTrue(("File TestFile Line 2 Invalid format "
@@ -354,6 +365,76 @@ class TestDemandFile(unittest.TestCase):
                      call(("'test2.xlsx', '2', '2006', '12', '3', "
                            "'9', '2006', '6', '7', '8', '6875.0'"))]
             mock_print.assert_has_calls(calls, any_order = False)
+
+    def test_get_demand_success(self):
+        file_data = self.file_header + ("\n"
+        "'test1.xlsx', '1', '2006', '11', '2', '8', '2006', '3', '4', '5', '6851.0'\n"
+        "'test2.xlsx', '2', '2006', '12', '3', '9', '2006', '6', '7', '8', '6580.0'\n"
+        "'test3.xlsx', '3', '2006', '03', '04', '10', '2006', '06', '07', '8', '4562.0'\n"
+        )
+
+        with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
+            df = demand_file()
+            self.assertFalse(mock_file.called)
+            df.read_demand_file("TestFile")
+            mock_file.assert_called_with("TestFile", 'r')
+            self.assertEqual(len(df.dbase), 3)
+            self.assertEqual(len(df.xref_load.keys()), 1)
+            self.assertTrue("2006" in df.xref_load.keys())
+
+            self.assertEqual(len(df.xref_load["2006"].keys()), 3)
+            self.assertTrue("11" in df.xref_load["2006"].keys())
+            self.assertEqual(len(df.xref_load["2006"]["11"].keys()), 1)
+            self.assertTrue("2" in df.xref_load["2006"]["11"].keys())
+            self.assertEqual(len(df.xref_load["2006"]["11"]["2"].keys()), 1)
+            self.assertTrue("8" in df.xref_load["2006"]["11"]["2"].keys())
+            self.assertEqual(df.xref_load["2006"]["11"]["2"]["8"].fp,"test1.xlsx")
+            self.assertEqual(df.xref_load["2006"]["11"]["2"]["8"].mw, 6851.0)
+
+            self.assertTrue("12" in df.xref_load["2006"].keys())
+            self.assertEqual(len(df.xref_load["2006"]["12"].keys()), 1)
+            self.assertTrue("3" in df.xref_load["2006"]["12"].keys())
+            self.assertEqual(len(df.xref_load["2006"]["12"]["3"].keys()), 1)
+            self.assertTrue("9" in df.xref_load["2006"]["12"]["3"].keys())
+            self.assertEqual(df.xref_load["2006"]["12"]["3"]["9"].fp,"test2.xlsx")
+            self.assertEqual(df.xref_load["2006"]["12"]["3"]["9"].mw, 6580.0)
+
+            self.assertTrue("3" in df.xref_load["2006"].keys())
+            self.assertEqual(len(df.xref_load["2006"]["3"].keys()), 1)
+            self.assertTrue("4" in df.xref_load["2006"]["3"].keys())
+            self.assertEqual(len(df.xref_load["2006"]["3"]["4"].keys()), 1)
+            self.assertTrue("10" in df.xref_load["2006"]["3"]["4"].keys())
+            self.assertEqual(df.xref_load["2006"]["3"]["4"]["10"].fp,"test3.xlsx")
+            self.assertEqual(df.xref_load["2006"]["3"]["4"]["10"].mw, 4562.0)
+
+            UTC = datetime(2006, 11, 2, hour=8, tzinfo=timezone.utc)
+            self.assertEqual(df.get_demand(UTC), 6851.0)
+            UTC = datetime(2006, 12, 3, hour=9, tzinfo=timezone.utc)
+            self.assertEqual(df.get_demand(UTC), 6580.0)
+            UTC = datetime(2006, 3, 4, hour=10, tzinfo=timezone.utc)
+            self.assertEqual(df.get_demand(UTC), 4562.0)
+
+    def test_get_demand_failure(self):
+        file_data = self.file_header + ("\n"
+        "'test1.xlsx', '1', '2006', '11', '2', '8', '2006', '3', '4', '5', '6851.0'\n"
+        "'test2.xlsx', '2', '2006', '12', '3', '9', '2006', '6', '7', '8', '6580.0'\n"
+        )
+
+        with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
+            df = demand_file()
+            self.assertFalse(mock_file.called)
+            df.read_demand_file("TestFile")
+            mock_file.assert_called_with("TestFile", 'r')
+            self.assertEqual(len(df.dbase), 2)
+            self.assertEqual(LOAD_ERROR, -1.0)
+            UTC = datetime(2021,11, 2, hour=8, tzinfo=timezone.utc)
+            self.assertEqual(df.get_demand(UTC), -1.0)
+            UTC = datetime(2006,12, 2, hour=8, tzinfo=timezone.utc)
+            self.assertEqual(df.get_demand(UTC), -1.0)
+            UTC = datetime(2006,11, 3, hour=8, tzinfo=timezone.utc)
+            self.assertEqual(df.get_demand(UTC), -1.0)
+            UTC = datetime(2006,11, 2, hour=7, tzinfo=timezone.utc)
+            self.assertEqual(df.get_demand(UTC), -1.0)
 
 if __name__ == '__main__':
     unittest.main()

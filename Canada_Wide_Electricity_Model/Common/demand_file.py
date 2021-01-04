@@ -21,6 +21,11 @@ import copy
 from datetime import datetime, timezone
 from common_defs import *
 
+class fp_mw(object):
+    def __init__(self, fp="", mw=0.0):
+        self.fp = fp
+        self.mw = float(mw)
+
 class demand_hour(object):
     default_year = "0000"
     default_month = "00"
@@ -49,6 +54,15 @@ class demand_hour(object):
         local = ("%s-%s-%s" % (self.local_Y, self.local_M, self.local_D))
 
         try:
+            self.UTC_Y     = str(int(self.UTC_Y))
+            self.UTC_M     = str(int(self.UTC_M))
+            self.UTC_D     = str(int(self.UTC_D))
+            self.UTC_H     = str(int(self.UTC_H))
+            self.local_Y   = str(int(self.local_Y))
+            self.local_M   = str(int(self.local_M))
+            self.local_D   = str(int(self.local_D))
+            self.local_H   = str(int(self.local_H))
+            self.demand_MW = str(float(self.demand_MW))
             UTC_date = datetime.strptime(UTC, '%Y-%m-%d')
             local_date = datetime.strptime(local, '%Y-%m-%d')
             if (not ((int(self.UTC_H) in range(0, 24)) and
@@ -58,7 +72,7 @@ class demand_hour(object):
                      (float(self.demand_MW) < 0.0)):
                 return False
         except ValueError as e:
-            logging.info("File %s Line %s Date validation error." %
+            logging.info("File %s Line %s Data validation error." %
                          (self.file_path, str(self.line_num)))
             logging.info(e)
             return False
@@ -146,7 +160,8 @@ class demand_file(object):
                 (d_hr.file_path, str(d_hr.line_num), str(d_hr.UTC_H),
                  self.xref_load[d_hr.UTC_Y][d_hr.UTC_M][d_hr.UTC_D][d_hr.UTC_H]))
 
-        self.xref_load[d_hr.UTC_Y][d_hr.UTC_M][d_hr.UTC_D][d_hr.UTC_H] = d_hr.file_path
+        self.xref_load[d_hr.UTC_Y][d_hr.UTC_M][d_hr.UTC_D][d_hr.UTC_H] = (
+                fp_mw(d_hr.file_path, d_hr.demand_MW))
 
     def add_demand_hour(self, field_list):
         d_hr = demand_hour(field_list)
@@ -157,6 +172,12 @@ class demand_file(object):
             return
 
         raise ValueError("Invalid demand hour: %s" % field_list)
+
+    def get_demand(self, UTC):
+        try:
+            return self.xref_load[str(UTC.year)][str(UTC.month)][str(UTC.day)][str(UTC.hour)].mw
+        except:
+            return LOAD_ERROR
 
     def write_demand_file(self):
         if len(self.dbase) == 0:
