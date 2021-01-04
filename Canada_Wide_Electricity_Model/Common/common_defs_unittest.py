@@ -5,6 +5,8 @@
 
 """
 
+import os
+import path
 from common_defs import *
 import unittest
 
@@ -25,7 +27,10 @@ class TestConstants(unittest.TestCase):
         # The following lines confirm that all definitions in the
         # common_defs.py file are checked, assuming each definition
         # has exactly one '=' character.
-        with open("common_defs.py", 'r') as tempfile:
+        file_path = "common_defs.py"
+        if not os.path.isfile(file_path):
+            file_path = "Common/common_defs.py"
+        with open(file_path, 'r') as tempfile:
             counts = [line.strip().count('=') for line in tempfile.readlines()]
         self.assertEqual(sum(counts), 7)
 
