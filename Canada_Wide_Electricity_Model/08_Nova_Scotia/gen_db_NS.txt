@@ -1,0 +1,7 @@
+Fuel, Capacity, GHG_MWh, Timezone
+'BIOMASS', '90.1', '0.0', 'America/Halifax'
+'COAL', '1232.0', '0.0', 'America/Halifax'
+'HYDRO', '403.0', '0.0', 'America/Halifax'
+'NATGAS', '415.0', '0.0', 'America/Halifax'
+'OIL', '222.0', '0.0', 'America/Halifax'
+'WIND', '190.95', '0.0', 'America/Halifax'

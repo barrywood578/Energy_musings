@@ -1,0 +1,5 @@
+Fuel, Capacity, GHG_MWh, Timezone
+'BIOMASS', '15.0', '0.0', 'America/St_Johns'
+'HYDRO', '6951.806000000002', '0.0', 'America/St_Johns'
+'OIL', '590.0', '0.0', 'America/St_Johns'
+'WIND', '54.3', '0.0', 'America/St_Johns'

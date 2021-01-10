@@ -23,6 +23,7 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(CSV_FILE_EXTENSION, ".csv")
         self.assertEqual(PDF_FILE_EXTENSION, ".pdf")
         self.assertEqual(LOAD_ERROR, -1.0)
+        self.assertEqual(DATE_FORMAT, '%Y-%m-%d %H:%M')
         
         # The following lines confirm that all definitions in the
         # common_defs.py file are checked, assuming each definition
@@ -32,7 +33,7 @@ class TestConstants(unittest.TestCase):
             file_path = "Common/common_defs.py"
         with open(file_path, 'r') as tempfile:
             counts = [line.strip().count('=') for line in tempfile.readlines()]
-        self.assertEqual(sum(counts), 7)
+        self.assertEqual(sum(counts), 8)
 
 if __name__ == '__main__':
     unittest.main()

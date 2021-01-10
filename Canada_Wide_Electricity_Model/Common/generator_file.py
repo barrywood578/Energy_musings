@@ -60,9 +60,19 @@ class generator_file(object):
 
     def add_generator(self, toks):
         fuel = toks[0]
-        capacity = float(toks[1])
-        ghg = float(toks[2])
+        capacity = float(toks[1].replace(',',''))
+        if toks[2] == '':
+            ghg = 'NONUMBER'
+        else:
+            ghg = float(toks[2])
         tz_str = toks[3]
+        if fuel in self.gen_db:
+            self.gen_db[fuel].mw += capacity
+            if not ghg == 'NONUMBER':
+                self.gen_db[fuel].ghg = ghg
+            if not tz_str == '':
+                self.gen_db[fuel].tz_str = tz_str
+            return
         self.gen_db[fuel] = generator(capacity, ghg, tz_str)
 
     def get_total_capacity(self, dt):

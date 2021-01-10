@@ -1,0 +1,3 @@
+Fuel, Capacity, GHG_MWh, Timezone
+'OIL', '179.0', '0.0', 'America/Charlottetown'
+'WIND', '160.6', '0.0', 'America/Charlottetown'

@@ -1,0 +1,6 @@
+Fuel, Capacity, GHG_MWh, Timezone
+'CO_GEN', '917.7849999999999', '0.0', 'America/Vancouver'
+'HYDRO', '15914.76', '0.0', 'America/Vancouver'
+'NATGAS', '507.8', '0.0', 'America/Vancouver'
+'SOLAR_PV', '2.04', '0.0', 'America/Vancouver'
+'WIND', '697.9000000000001', '0.0', 'America/Vancouver'

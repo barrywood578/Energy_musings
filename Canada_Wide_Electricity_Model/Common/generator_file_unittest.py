@@ -183,6 +183,37 @@ class TestGeneratorFile(unittest.TestCase):
             ghg = gf.get_ghg_emissions(5010.0)
             self.assertEqual(ghg, 1002*1 + 1004*8 + 1003*15 + 1001*20 + 1000*100)
 
+    def test_add_generator_success(self):
+        file_data= ("Fuel, Capacity, GHG_MWh, Timezone\n" 
+                    "'Coal', '10,000', '100', 'America/Edmonton'\n"
+                    "'NatGas', '11,001', '20', 'America/Regina'\n"
+                    "'Nuclear', '12,002', '1', 'America/Toronto'\n"
+                    "'SolarPV', '13,003', '15', 'America/Vancouver'\n"
+                    "'Hydro', '14,004', '8', 'America/Montreal'\n")
+        with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
+            gf = generator_file("TestFile")
+            self.assertTrue(mock_file.called)
+            self.assertEqual(gf.sorted_db, {})
+            tot_cap = gf.get_total_capacity("NoDate")
+            self.assertEqual(tot_cap, 60010.0)
+            self.assertEqual(gf.sorted_db, {})
+
+            gf.add_generator(['Coal', '9,876', '20', 'America/Regina'])
+            self.assertEqual(gf.gen_db['Coal'].mw, 19876.0)
+            self.assertEqual(gf.gen_db['Coal'].ghg, 20.0)
+            self.assertEqual(gf.gen_db['Coal'].tz_str, 'America/Regina')
+
+            gf.add_generator(['NatGas', '0.0', '99.0', ''])
+            self.assertEqual(gf.gen_db['NatGas'].mw, 11001.0)
+            self.assertEqual(gf.gen_db['NatGas'].ghg, 99.0)
+            self.assertEqual(gf.gen_db['NatGas'].tz_str, 'America/Regina')
+
+            gf.add_generator(['Nuclear', '0.0', '', 'NewTimeZone'])
+            self.assertEqual(gf.gen_db['Nuclear'].mw, 12002.0)
+            self.assertEqual(gf.gen_db['Nuclear'].ghg, 1.0)
+            self.assertEqual(gf.gen_db['Nuclear'].tz_str, 'NewTimeZone')
+
+
     def test_get_ghg_emissions_failure(self):
         file_data= ("Fuel, Capacity, GHG_MWh, Timezone\n" 
                     "'Coal', '1000', '100', 'America/Edmonton'\n"
