@@ -24,4 +24,8 @@ To generate all load data based on current files, execute:
 
 Generator data is scraped from Wikipedia pages for each province.
 To generate all generator data based on current status, execute:
-./run_gen_data_assembly.sh
+./run_gen_data_assembly.sh <KEY_FILE_NAME>
+
+NOTE: <KEY_FILE_NAME> is a file containing the key for the PVWatts web
+service on its first line.  This file is not necessary, but will result
+in faster execution.

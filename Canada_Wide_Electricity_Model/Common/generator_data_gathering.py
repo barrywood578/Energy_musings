@@ -14,6 +14,7 @@ import logging
 from lxml import etree
 import urllib3
 from generator_file import generator_file
+from solar_data_gathering import SolarGeneration
 
 class my_table_info(object):
     def __init__(self, heading, columns, data):
@@ -22,8 +23,9 @@ class my_table_info(object):
         self.data = data
 
 class GeneratorHTML(object):
-    def __init__(self, url=""):
+    def __init__(self, url="", key_file="DEMO_KEY", pv_solar_path=''):
         self.gen_file = generator_file()
+        self.pv_solar = SolarGeneration(key_file, pv_solar_path)
         self.tables = []
         if (url == ""):
             return
@@ -54,30 +56,30 @@ class GeneratorHTML(object):
                     text = " ".join(toks)
                     texts.append(text)
                 if ('bgcolor' in row.attrib):
-                    logging.info("Discarded row %s:%s" % (row.attrib, ",".join(texts)))
+                    logging.debug("Discarded row %s:%s" % (row.attrib, ",".join(texts)))
                     continue
                 if row[0].tag == 'th':
                     if my_table.column_names == []:
                         found_header = True
                         my_table.column_names = texts
                     else:
-                        #logging.info("Discarded subsequent table header")
+                        logging.debug("Discarded subsequent table header")
                         pass
                 elif row[0].tag == 'td':
                     if (len(texts) == len(my_table.column_names)):
                         my_table.data.append(texts)
                     else:
-                        # logging.info("Discarded table data")
+                        logging.debug("Discarded table data")
                         pass
         col_count = len(my_table.column_names)
         if col_count == 0:
-            #logging.info("Column count is 0!")
+            logging.debug("Column count is 0!")
             return None
         for row in my_table.data:
             if len(row) != col_count:
-                #logging.info("Row count does not match column count!")
+                logging.debug("Row count does not match column count!")
                 return None
-        logging.info("Found table %s" % my_table.heading)
+        logging.debug("Found table %s" % my_table.heading)
         return my_table
 
     def find_tables_in_tree(self, tree, last_header):
@@ -129,14 +131,27 @@ class GeneratorHTML(object):
         mapping_keywords = ["Capacity"]
         return self.find_column(table, mapping_keywords)
 
+    def find_location_column(self, table):
+        mapping_keywords = ["Location"]
+        return self.find_column(table, mapping_keywords)
+
+    def add_solar_site_data(self, location, capacity):
+        if ("off-grid" in location):
+            logging.debug("Skipping %s" % location)
+            return
+        logging.info("Querying PVWATTS, location %s" % location)
+        self.pv_solar.add_new_site(location+",Canada", '', '', float(capacity) * 1000.0)
+
     def map_table_to_generator_file(self, table, tz_string):
         fuel_idx = -1
         fuel = self.find_fuel(table.heading)
         if fuel == '':
             fuel_idx = self.find_fuel_column(table)
         cap_idx = self.find_capacity_column(table)
+        loc_idx = self.find_location_column(table)
         if (cap_idx == -1) or ((fuel == '') and (fuel_idx == -1)):
-            logging.info("Skipping table %s, no fuel %s %d or capacity %d" %
+            logging.info("Skipping table %s" % table.heading)
+            logging.debug("Skipping table %s, no fuel %s %d or capacity %d" %
                          (table.heading, fuel, fuel_idx, cap_idx))
             return
 
@@ -162,8 +177,10 @@ class GeneratorHTML(object):
                 capacity = "3"
             if capacity == r"829[4]":
                 capacity = "829"
-            logging.info("%s:%s" % (fuel_name, capacity))
+            logging.debug("%s:%s" % (fuel_name, capacity))
             self.gen_file.add_generator([fuel_name, capacity, '0.0', tz_string])
+            if (fuel_name == "SOLAR_PV") and (not loc_idx == -1):
+                self.add_solar_site_data(row[loc_idx], capacity)
         logging.info("Processed table %s" % (table.heading))
 
     def map_tables_to_generator_file(self, tz_string):
@@ -175,6 +192,9 @@ class GeneratorHTML(object):
 
     def write_generator_file(self):
         self.gen_file.write_generator_file()
+
+    def write_pv_solar_file(self):
+        self.pv_solar.write_solar_generator_file()
 
 def create_parser():
     parser = OptionParser(description="Get generation file based on Wikipedia list of generating stations.")
@@ -188,10 +208,20 @@ def create_parser():
             action = 'store', type = 'string', default = "",
             help = "Valid pytz timezone string.",
             metavar = 'TIMEZONE')
+    parser.add_option('-k', '--keyfile',
+            dest = 'key_file',
+            action = 'store', type = 'string', default = "DEMO_KEY",
+            help = "File whose first line is a user key for PVWatts.",
+            metavar = 'FILE')
+    parser.add_option('-s', '--solar_file',
+            dest = 'pv_solar_file',
+            action = 'store', type = 'string', default = "",
+            help = "If present, name of file containing hourly PV Solar generation data.",
+            metavar = 'FILE')
     return parser
 
 def main(argv = None):
-    logging.basicConfig(level=logging.WARN)
+    logging.basicConfig(level=logging.INFO)
 
     parser = create_parser()
     if argv is None:
@@ -204,9 +234,10 @@ def main(argv = None):
         parser.print_help()
         return -1
 
-    gen_HTML = GeneratorHTML(options.url_path)
+    gen_HTML = GeneratorHTML(options.url_path, options.key_file, options.pv_solar_file)
     gen_HTML.map_tables_to_generator_file(options.tz_str)
     gen_HTML.write_generator_file()
+    gen_HTML.pv_solar.write_solar_generator_file()
 
 if __name__ == '__main__':
     sys.exit(main())
