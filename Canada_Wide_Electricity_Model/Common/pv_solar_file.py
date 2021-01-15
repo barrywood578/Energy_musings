@@ -135,11 +135,16 @@ class pv_solar_file(object):
         except:
             return LOAD_ERROR
 
-    def write_pv_solar_file(self):
+    def write_pv_solar_file(self, filepath=''):
         if len(self.capacity) == 0:
-            print("PV Solar file is empty!")
+            if filepath == '':
+                print("PV Solar file is empty!")
             return
-        print(self.pv_solar_file_header)
+        if filepath == '':
+            outfile = sys.stdout
+        else:
+            outfile = open(filepath, 'w')
+        print(self.pv_solar_file_header, file=outfile)
         for year in self.capacity.keys():
             for month in self.capacity[year].keys():
                 for day in self.capacity[year][month].keys():
@@ -148,7 +153,10 @@ class pv_solar_file(object):
                         solar_hour = self.capacity[year][month][day][hour].get_list_from_pv_solar_hour()
                         field_vals.extend([str(x) for x in solar_hour])
                         line_text = SEPARATOR.join(field_vals)
-                        print("%s%s%s" % (START_END, line_text, START_END))
+                        print("%s%s%s" % (START_END, line_text, START_END),
+                                file=outfile)
+        if filepath != '':
+            outfile.close()
 
 def create_parser():
     parser = OptionParser(description="PV Solar file support.")

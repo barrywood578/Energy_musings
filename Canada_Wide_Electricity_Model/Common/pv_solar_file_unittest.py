@@ -7,9 +7,10 @@
 from pv_solar_file import pv_solar_hour, pv_solar_file
 from datetime import datetime
 
+import sys
 import unittest
 import mock
-from unittest.mock import patch, mock_open, call
+from unittest.mock import patch, mock_open, call, MagicMock
 import logging
 
 class TestPVSolarHour(unittest.TestCase):
@@ -351,12 +352,42 @@ class TestPVSolarFile(unittest.TestCase):
             self.assertTrue(mock_file.called)
             pv.write_pv_solar_file()
         self.assertEqual(mock_print.call_count, 5)
-        calls = [call("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)"),
-                 call("'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'"),
-                 call("'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'"),
-                 call("'2000', '1', '4', '9', '2000', '3', '4', '9', '1230.0'"),
-                 call("'2000', '1', '4', '10', '2000', '4', '5', '10', '123.0'")]
+        calls = [call("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)",
+                     file=sys.stdout),
+                 call("'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'",
+                     file=sys.stdout),
+                 call("'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'",
+                     file=sys.stdout),
+                 call("'2000', '1', '4', '9', '2000', '3', '4', '9', '1230.0'",
+                     file=sys.stdout),
+                 call("'2000', '1', '4', '10', '2000', '4', '5', '10', '123.0'",
+                     file=sys.stdout)]
         mock_print.assert_has_calls(calls, any_order = False)
+
+    @patch('builtins.print')
+    def test_write_pv_solar_file_realfile(self, mock_print):
+        file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)\n"
+                    "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
+                    "'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'\n"
+                    "'2000', '1', '4', '9', '2000', '3', '4', '9', '1230.0'\n"
+                    "'2000', '1', '4', '10', '2000', '4', '5', '10', '123.0'\n")
+        with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
+            pv = pv_solar_file("TestFile")
+            self.assertTrue(mock_file.called)
+            with patch("builtins.open", mock_open()) as mock_out:
+                pv.write_pv_solar_file("TestOut")
+            self.assertEqual(mock_print.call_count, 5)
+            calls = [call("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)",
+                     file=mock_out()),
+                 call("'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'",
+                     file=mock_out()),
+                 call("'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'",
+                     file=mock_out()),
+                 call("'2000', '1', '4', '9', '2000', '3', '4', '9', '1230.0'",
+                     file=mock_out()),
+                 call("'2000', '1', '4', '10', '2000', '4', '5', '10', '123.0'",
+                     file=mock_out())]
+            mock_print.assert_has_calls(calls, any_order = False)
 
 if __name__ == '__main__':
     unittest.main()
