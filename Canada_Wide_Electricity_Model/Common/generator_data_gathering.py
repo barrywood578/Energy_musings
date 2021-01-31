@@ -99,7 +99,8 @@ class GeneratorHTML(object):
     def find_fuel(self, target):
         mapping_keywords = {
             'NUCLEAR': ['nuclear'],
-            'HYDRO': ['hydro'],
+            'HYDRO_RES': ['hydro', "reservoir"],
+            'HYDRO_RUN': ['hydro', "run of river", "run-of-the-river"],
             'CO_GEN' : ['waste heat', 'blast furnace'],
             'BIOMASS': ['biomass', 'biogas', 'waste'],
             'NATGAS' : ['natural gas', 'dual fuel'],
@@ -117,6 +118,8 @@ class GeneratorHTML(object):
         return ''
 
     def find_column(self, table, keywords):
+        logging.debug("keywords: %s" % str(keywords))
+        logging.debug("columns : %s" % str(table.column_names))
         for idx, col in enumerate(table.column_names):
             for kw in keywords:
                 if kw in col:
@@ -145,8 +148,11 @@ class GeneratorHTML(object):
     def map_table_to_generator_file(self, table, tz_string):
         fuel_idx = -1
         fuel = self.find_fuel(table.heading)
-        if fuel == '':
+        logging.debug("Fuel from table heading: %s" % fuel)
+        if fuel == '' or (fuel[0:5] == "HYDRO"):
             fuel_idx = self.find_fuel_column(table)
+            if fuel_idx != -1:
+                fuel = ''
         cap_idx = self.find_capacity_column(table)
         loc_idx = self.find_location_column(table)
         if (cap_idx == -1) or ((fuel == '') and (fuel_idx == -1)):
@@ -156,6 +162,7 @@ class GeneratorHTML(object):
             return
 
         fuel_name = fuel
+        logging.debug("Fuel: %s Fuel Idx %d" % (fuel, fuel_idx))
         for row in table.data:
             if row[0].strip().lower() == "total":
                 continue
