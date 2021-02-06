@@ -34,6 +34,14 @@ echo 'Alberta Starting...'
 ./Common/generator_data_gathering.py -u 'https://en.wikipedia.org/wiki/List_of_generating_stations_in_Alberta' -t 'America/Edmonton' -k ${KEY_FILE} -s 02_Alberta/gen_pv_AB.txt > 02_Alberta/gen_db_AB.txt
 check_rc 'Alberta'
 
+echo 'Saskatchewan Starting...'
+./Common/generator_data_gathering.py -u 'https://en.wikipedia.org/wiki/List_of_generating_stations_in_Saskatchewan' -t 'America/Regina' -k ${KEY_FILE} -s 03_Saskatchewan/gen_pv_SK.txt > 03_Saskatchewan/gen_db_SK.txt
+check_rc 'Saskatchewan'
+
+echo 'Manitoba Starting...'
+./Common/generator_data_gathering.py -u 'https://en.wikipedia.org/wiki/List_of_generating_stations_in_Manitoba' -t 'America/Winnipeg' -k ${KEY_FILE} -s 04_Manitoba/gen_pv_MB.txt > 04_Manitoba/gen_db_MB.txt
+check_rc 'Manitoba'
+
 echo 'Ontario Starting...'
 ./Common/generator_data_gathering.py -u 'https://en.wikipedia.org/wiki/List_of_generating_stations_in_Ontario' -t 'America/Toronto' -k ${KEY_FILE} -s 05_Ontario/gen_pv_ON.txt > 05_Ontario/gen_db_ON.txt
 check_rc 'Ontario'

@@ -60,7 +60,8 @@ class generator_file(object):
 
     def add_generator(self, toks):
         fuel = toks[0]
-        capacity = float(toks[1].replace(',',''))
+        capacity = toks[1].split(" ")[0].replace(",",'')
+        capacity = float(capacity)
         if toks[2] == '':
             ghg = 'NONUMBER'
         else:

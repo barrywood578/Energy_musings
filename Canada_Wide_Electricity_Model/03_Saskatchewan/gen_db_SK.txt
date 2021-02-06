@@ -1,0 +1,6 @@
+Fuel, Capacity, GHG_MWh, Timezone
+'COAL', '1530.0', '0.0', 'America/Regina'
+'CO_GEN', '20.0', '0.0', 'America/Regina'
+'HYDRO_RES', '864.0', '0.0', 'America/Regina'
+'NATGAS', '1771.0', '0.0', 'America/Regina'
+'WIND', '242.0', '0.0', 'America/Regina'
