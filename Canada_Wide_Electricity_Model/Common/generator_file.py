@@ -105,6 +105,8 @@ class generator_file(object):
             return
         print(self.generator_file_header)
         for key in sorted(self.gen_db.keys()):
+            if self.gen_db[key].mw <= 0.0:
+                continue
             field_vals = [key, str(self.gen_db[key].mw), str(self.gen_db[key].ghg),
                           self.gen_db[key].tz_str]
             line_text = SEPARATOR.join(field_vals)

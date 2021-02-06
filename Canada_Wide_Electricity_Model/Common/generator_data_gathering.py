@@ -23,8 +23,8 @@ class my_table_info(object):
         self.data = data
 
 class GeneratorHTML(object):
-    def __init__(self, url="", key_file="DEMO_KEY", pv_solar_path=''):
-        self.gen_file = generator_file()
+    def __init__(self, url="", key_file="DEMO_KEY", pv_solar_path='', base_GHG=''):
+        self.gen_file = generator_file(base_GHG)
         self.pv_solar = SolarGeneration(key_file, pv_solar_path)
         self.tables = []
         if (url == ""):
@@ -185,7 +185,7 @@ class GeneratorHTML(object):
             if capacity == r"829[4]":
                 capacity = "829"
             logging.debug("%s:%s" % (fuel_name, capacity))
-            self.gen_file.add_generator([fuel_name, capacity, '0.0', tz_string])
+            self.gen_file.add_generator([fuel_name, capacity, '', tz_string])
             if (fuel_name == "SOLAR_PV") and (not loc_idx == -1):
                 self.add_solar_site_data(row[loc_idx], capacity)
         logging.info("Processed table %s" % (table.heading))
@@ -225,6 +225,11 @@ def create_parser():
             action = 'store', type = 'string', default = "",
             help = "If present, name of file containing hourly PV Solar generation data.",
             metavar = 'FILE')
+    parser.add_option('-g', '--GHG_base',
+            dest = 'base_GHG_file',
+            action = 'store', type = 'string', default = "",
+            help = "Name of file containing GHG base emission rates for each generator type.",
+            metavar = 'FILE')
     return parser
 
 def main(argv = None):
@@ -241,7 +246,7 @@ def main(argv = None):
         parser.print_help()
         return -1
 
-    gen_HTML = GeneratorHTML(options.url_path, options.key_file, options.pv_solar_file)
+    gen_HTML = GeneratorHTML(options.url_path, options.key_file, options.pv_solar_file, options.base_GHG_file)
     gen_HTML.map_tables_to_generator_file(options.tz_str)
     gen_HTML.write_generator_file()
     gen_HTML.pv_solar.write_solar_generator_file()
