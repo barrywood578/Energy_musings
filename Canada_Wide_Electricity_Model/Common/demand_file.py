@@ -18,7 +18,8 @@ import sys
 import os
 import logging
 import copy
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from math import ceil
 from common_defs import *
 
 class fp_mw(object):
@@ -108,6 +109,17 @@ class demand_hour(object):
         self.local_H   = str(the_list[9])
         self.demand_MW = str(the_list[10])
 
+class adjust_data(object):
+    def __init__(self, abs_adj=0.0, ratio=1.0):
+        self.abs_adj = float(abs_adj)
+        self.ratio = float(ratio)
+
+    def adjust(self, data_set):
+        updata = []
+        for data in data_set:
+            updata.append((data * self.ratio) + self.abs_adj)
+        return updata
+
 class demand_file(object):
     demand_file_header = "File, LineNum, UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)"
 
@@ -118,6 +130,13 @@ class demand_file(object):
         if (file_path == ""):
             return
         self.read_demand_file(file_path)
+
+    def _get_xref_keys_from_time(self, UTC):
+        y = str(UTC.year)
+        m = str(UTC.month)
+        d = str(UTC.day)
+        h = str(UTC.hour)
+        return y, m, d, h
 
     def read_demand_file(self, path):
         lines = []
@@ -156,9 +175,10 @@ class demand_file(object):
 
         if d_hr.UTC_H in self.xref_load[d_hr.UTC_Y][d_hr.UTC_M][d_hr.UTC_D]:
             raise ValueError(
-                "File %s Line %s Duplicate UTC hour %s! Original %s" %
-                (d_hr.file_path, str(d_hr.line_num), str(d_hr.UTC_H),
-                 self.xref_load[d_hr.UTC_Y][d_hr.UTC_M][d_hr.UTC_D][d_hr.UTC_H]))
+                "File %s Line %s Duplicate %s %s %s %s! Original file %s" %
+                (d_hr.file_path, d_hr.line_num,
+                 d_hr.UTC_Y, d_hr.UTC_M, d_hr.UTC_D, d_hr.UTC_H,
+                 self.xref_load[d_hr.UTC_Y][d_hr.UTC_M][d_hr.UTC_D][d_hr.UTC_H].fp))
 
         self.xref_load[d_hr.UTC_Y][d_hr.UTC_M][d_hr.UTC_D][d_hr.UTC_H] = (
                 fp_mw(d_hr.file_path, d_hr.demand_MW))
@@ -172,6 +192,28 @@ class demand_file(object):
             return
 
         raise ValueError("Invalid demand hour: %s" % field_list)
+
+    def duplicate_demand(self, src_UTC, new_UTC, interval, adjustment):
+        hours = (interval.days * 24) + ceil(interval.seconds/3600)
+        for i in range(0, hours):
+            y, m, d, h = self._get_xref_keys_from_time(src_UTC)
+            mw = self.xref_load[y][m][d][h].mw
+            new_mw = adjustment.adjust([mw])[0]
+            field_list = ["Dupped", 0,
+                         new_UTC.year, new_UTC.month, new_UTC.day, new_UTC.hour,
+                         new_UTC.year, new_UTC.month, new_UTC.day, new_UTC.hour,
+                         new_mw]
+            self.add_demand_hour(field_list)
+            src_UTC = src_UTC + timedelta(hours=1)
+            new_UTC = new_UTC + timedelta(hours=1)
+
+    def adjust_demand(self, src_UTC, interval, adj):
+        hours = (interval.days * 24) + ceil(interval.seconds/3600)
+        for i in range(0, hours):
+            y, m, d, h = self._get_xref_keys_from_time(src_UTC)
+            new_mw = adj.adjust([self.xref_load[y][m][d][h].mw])[0]
+            self.xref_load[y][m][d][h].mw = new_mw
+            src_UTC = src_UTC + timedelta(hours=1)
 
     def get_demand(self, UTC):
         try:

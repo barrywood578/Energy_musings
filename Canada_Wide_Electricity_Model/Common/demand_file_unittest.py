@@ -5,9 +5,10 @@
 
 """
 
-from demand_file import demand_hour, demand_file
-from datetime import datetime, timezone
+from demand_file import demand_hour, demand_file, adjust_data
+from datetime import datetime, timezone, timedelta
 from common_defs import *
+from math import ceil
 
 import unittest
 import mock
@@ -124,6 +125,43 @@ class TestDemandHour(unittest.TestCase):
         demand.add_demand_hour(list_1)
         self.assertRaises(ValueError, demand.add_demand_hour, list_2)
 
+class TestAdjustDemand(unittest.TestCase):
+
+    def setUp(self):
+        pass
+
+    def test_constants(self):
+        pass
+
+    def test_init(self):
+        adj = adjust_data()
+        self.assertEqual(adj.abs_adj, 0.0)
+        self.assertEqual(adj.ratio, 1.0)
+
+        adj = adjust_data(abs_adj="1000")
+        self.assertEqual(adj.abs_adj, 1000.0)
+        self.assertEqual(adj.ratio, 1.0)
+
+        adj = adjust_data(abs_adj=9999)
+        self.assertEqual(adj.abs_adj, 9999.0)
+        self.assertEqual(adj.ratio, 1.0)
+
+        adj = adjust_data(ratio="100")
+        self.assertEqual(adj.abs_adj, 0.0)
+        self.assertEqual(adj.ratio, 100.0)
+        adj = adjust_data(ratio=99)
+        self.assertEqual(adj.abs_adj, 0.0)
+        self.assertEqual(adj.ratio, 99.0)
+
+    def test_adjust(self):
+        adj = adjust_data(abs_adj = "100", ratio = "100")
+        upd = adj.adjust([100, 200, 300, 400])
+        self.assertEqual(len(upd), 4)
+        self.assertEqual(upd[0], (100 * 100) + 100)
+        self.assertEqual(upd[1], (200 * 100) + 100)
+        self.assertEqual(upd[2], (300 * 100) + 100)
+        self.assertEqual(upd[3], (400 * 100) + 100)
+
 class TestDemandFile(unittest.TestCase):
     file_header = ("File, LineNum, UTC_Year, UTC_Month, "
                    "UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)")
@@ -146,6 +184,15 @@ class TestDemandFile(unittest.TestCase):
             self.assertEqual(df.dbase, [])
             self.assertEqual(df.xref_load, {})
             self.assertFalse(mock_file.called)
+
+    def test_get_xref_keys_from_time(self):
+        df = demand_file()
+        UTC = datetime(2020, 3, 1, hour=17, minute=33)
+        y, m, d, h = df._get_xref_keys_from_time(UTC)
+        self.assertEqual(y, '2020')
+        self.assertEqual(m, '3')
+        self.assertEqual(d, '1')
+        self.assertEqual(h, '17')
 
     def test_init_with_file(self):
         file_data = self.file_header + ("\n"
@@ -435,6 +482,134 @@ class TestDemandFile(unittest.TestCase):
             self.assertEqual(df.get_demand(UTC), -1.0)
             UTC = datetime(2006,11, 2, hour=7, tzinfo=timezone.utc)
             self.assertEqual(df.get_demand(UTC), -1.0)
+
+    def test_duplicate_demand(self):
+        file_data = self.file_header + ("\n"
+        "'test1.xlsx', '1', '2006', '1', '1', '0', '2006', '1', '1', '0', '100.0'\n"
+        "'test1.xlsx', '2', '2006', '1', '1', '1', '2006', '1', '1', '1', '101.0'\n"
+        "'test1.xlsx', '3', '2006', '1', '1', '2', '2006', '1', '1', '2', '102.0'\n"
+        "'test1.xlsx', '4', '2006', '1', '1', '3', '2006', '1', '1', '3', '103.0'\n"
+        "'test1.xlsx', '5', '2006', '1', '1', '4', '2006', '1', '1', '4', '104.0'\n"
+        "'test1.xlsx', '6', '2006', '1', '1', '5', '2006', '1', '1', '5', '105.0'\n"
+        "'test1.xlsx', '7', '2006', '1', '1', '6', '2006', '1', '1', '6', '106.0'\n"
+        "'test1.xlsx', '8', '2006', '1', '1', '7', '2006', '1', '1', '7', '107.0'\n"
+        "'test1.xlsx', '9', '2006', '1', '1', '8', '2006', '1', '1', '8', '108.0'\n"
+        "'test1.xlsx', '10', '2006', '1', '1', '9', '2006', '1', '1', '9', '109.0'\n"
+        "'test1.xlsx', '11', '2006', '1', '1', '10', '2006', '1', '1', '10', '110.0'\n"
+        "'test1.xlsx', '12', '2006', '1', '1', '11', '2006', '1', '1', '11', '120.0'\n"
+        "'test1.xlsx', '13', '2006', '1', '1', '12', '2006', '1', '1', '12', '130.0'\n"
+        "'test1.xlsx', '14', '2006', '1', '1', '13', '2006', '1', '1', '13', '140.0'\n"
+        "'test1.xlsx', '15', '2006', '1', '1', '14', '2006', '1', '1', '14', '150.0'\n"
+        "'test1.xlsx', '16', '2006', '1', '1', '15', '2006', '1', '1', '15', '160.0'\n"
+        "'test1.xlsx', '17', '2006', '1', '1', '16', '2006', '1', '1', '16', '170.0'\n"
+        "'test1.xlsx', '18', '2006', '1', '1', '17', '2006', '1', '1', '17', '180.0'\n"
+        "'test1.xlsx', '19', '2006', '1', '1', '18', '2006', '1', '1', '18', '190.0'\n"
+        "'test1.xlsx', '20', '2006', '1', '1', '19', '2006', '1', '1', '19', '200.0'\n"
+        "'test1.xlsx', '21', '2006', '1', '1', '20', '2006', '1', '1', '20', '210.0'\n"
+        "'test1.xlsx', '22', '2006', '1', '1', '21', '2006', '1', '1', '21', '220.0'\n"
+        "'test1.xlsx', '23', '2006', '1', '1', '22', '2006', '1', '1', '22', '230.0'\n"
+        "'test1.xlsx', '24', '2006', '1', '1', '23', '2006', '1', '1', '23', '240.0'\n"
+        )
+
+        with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
+            df = demand_file()
+            self.assertFalse(mock_file.called)
+            df.read_demand_file("TestFile")
+            mock_file.assert_called_with("TestFile", 'r')
+            self.assertEqual(len(df.dbase), 24)
+
+            src_time = datetime(2006, 1, 1, hour=0)
+            interval = timedelta(hours=24)
+            new_time = src_time + interval
+            adj = adjust_data()
+            df.duplicate_demand(src_time, new_time, interval, adj)
+
+            self.assertEqual(len(df.dbase), 48)
+            self.assertEqual(len(df.xref_load.keys()), 1)
+            self.assertTrue("2006" in df.xref_load.keys())
+            self.assertEqual(len(df.xref_load["2006"].keys()), 1)
+            self.assertTrue("1" in df.xref_load["2006"].keys())
+            self.assertEqual(len(df.xref_load["2006"]["1"].keys()), 2)
+            self.assertTrue("1" in df.xref_load["2006"]["1"].keys())
+            self.assertTrue("2" in df.xref_load["2006"]["1"].keys())
+            self.assertEqual(len(df.xref_load["2006"]["1"]["1"].keys()), 24)
+            self.assertEqual(len(df.xref_load["2006"]["1"]["2"].keys()), 24)
+            for hour in range (0, 24):
+                self.assertEqual(df.xref_load["2006"]["1"]["1"][str(hour)].mw,
+                                 df.xref_load["2006"]["1"]["2"][str(hour)].mw)
+
+            interval = timedelta(hours=48)
+            new_time = src_time + interval
+            adj = adjust_data(abs_adj=100, ratio=1.1)
+            df.duplicate_demand(src_time, new_time, interval, adj)
+
+            self.assertEqual(len(df.dbase), 96)
+            self.assertEqual(len(df.xref_load.keys()), 1)
+            self.assertTrue("2006" in df.xref_load.keys())
+            self.assertEqual(len(df.xref_load["2006"].keys()), 1)
+            self.assertTrue("1" in df.xref_load["2006"].keys())
+            self.assertEqual(len(df.xref_load["2006"]["1"].keys()), 4)
+            self.assertTrue("1" in df.xref_load["2006"]["1"].keys())
+            self.assertTrue("2" in df.xref_load["2006"]["1"].keys())
+            self.assertTrue("3" in df.xref_load["2006"]["1"].keys())
+            self.assertTrue("4" in df.xref_load["2006"]["1"].keys())
+            self.assertEqual(len(df.xref_load["2006"]["1"]["1"].keys()), 24)
+            self.assertEqual(len(df.xref_load["2006"]["1"]["2"].keys()), 24)
+            self.assertEqual(len(df.xref_load["2006"]["1"]["3"].keys()), 24)
+            self.assertEqual(len(df.xref_load["2006"]["1"]["4"].keys()), 24)
+            for hour in range (0, 24):
+                self.assertEqual((df.xref_load["2006"]["1"]["1"][str(hour)].mw * 1.1) + 100,
+                                 df.xref_load["2006"]["1"]["3"][str(hour)].mw)
+                self.assertEqual((df.xref_load["2006"]["1"]["2"][str(hour)].mw * 1.1) + 100,
+                                 df.xref_load["2006"]["1"]["4"][str(hour)].mw)
+
+    def test_adjust_demand(self):
+        file_data = self.file_header + ("\n"
+        "'test1.xlsx', '1', '2006', '1', '1', '0', '2006', '1', '1', '0', '100.0'\n"
+        "'test1.xlsx', '2', '2006', '1', '1', '1', '2006', '1', '1', '1', '101.0'\n"
+        "'test1.xlsx', '3', '2006', '1', '1', '2', '2006', '1', '1', '2', '102.0'\n"
+        "'test1.xlsx', '4', '2006', '1', '1', '3', '2006', '1', '1', '3', '103.0'\n"
+        "'test1.xlsx', '5', '2006', '1', '1', '4', '2006', '1', '1', '4', '104.0'\n"
+        "'test1.xlsx', '6', '2006', '1', '1', '5', '2006', '1', '1', '5', '105.0'\n"
+        "'test1.xlsx', '7', '2006', '1', '1', '6', '2006', '1', '1', '6', '106.0'\n"
+        "'test1.xlsx', '8', '2006', '1', '1', '7', '2006', '1', '1', '7', '107.0'\n"
+        "'test1.xlsx', '9', '2006', '1', '1', '8', '2006', '1', '1', '8', '108.0'\n"
+        "'test1.xlsx', '10', '2006', '1', '1', '9', '2006', '1', '1', '9', '109.0'\n"
+        "'test1.xlsx', '11', '2006', '1', '1', '10', '2006', '1', '1', '10', '110.0'\n"
+        "'test1.xlsx', '12', '2006', '1', '1', '11', '2006', '1', '1', '11', '120.0'\n"
+        "'test1.xlsx', '13', '2006', '1', '1', '12', '2006', '1', '1', '12', '130.0'\n"
+        "'test1.xlsx', '14', '2006', '1', '1', '13', '2006', '1', '1', '13', '140.0'\n"
+        "'test1.xlsx', '15', '2006', '1', '1', '14', '2006', '1', '1', '14', '150.0'\n"
+        "'test1.xlsx', '16', '2006', '1', '1', '15', '2006', '1', '1', '15', '160.0'\n"
+        "'test1.xlsx', '17', '2006', '1', '1', '16', '2006', '1', '1', '16', '170.0'\n"
+        "'test1.xlsx', '18', '2006', '1', '1', '17', '2006', '1', '1', '17', '180.0'\n"
+        "'test1.xlsx', '19', '2006', '1', '1', '18', '2006', '1', '1', '18', '190.0'\n"
+        "'test1.xlsx', '20', '2006', '1', '1', '19', '2006', '1', '1', '19', '200.0'\n"
+        "'test1.xlsx', '21', '2006', '1', '1', '20', '2006', '1', '1', '20', '210.0'\n"
+        "'test1.xlsx', '22', '2006', '1', '1', '21', '2006', '1', '1', '21', '220.0'\n"
+        "'test1.xlsx', '23', '2006', '1', '1', '22', '2006', '1', '1', '22', '230.0'\n"
+        "'test1.xlsx', '24', '2006', '1', '1', '23', '2006', '1', '1', '23', '240.0'\n"
+        )
+
+        with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
+            df = demand_file()
+            self.assertFalse(mock_file.called)
+            df.read_demand_file("TestFile")
+            mock_file.assert_called_with("TestFile", 'r')
+            self.assertEqual(len(df.dbase), 24)
+
+            src_time = datetime(2006, 1, 1, hour=0)
+            interval = timedelta(hours=24)
+            new_time = src_time + interval
+            adj = adjust_data()
+            df.duplicate_demand(src_time, new_time, interval, adj)
+
+            adj = adjust_data(abs_adj=50, ratio=0.9)
+            df.adjust_demand(src_time, interval, adj)
+
+            for hour in range (0, 24):
+                self.assertEqual(df.xref_load["2006"]["1"]["1"][str(hour)].mw,
+                                (df.xref_load["2006"]["1"]["2"][str(hour)].mw * 0.9) + 50.0)
 
 if __name__ == '__main__':
     unittest.main()
