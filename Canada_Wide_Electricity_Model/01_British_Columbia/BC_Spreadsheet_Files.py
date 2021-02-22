@@ -103,7 +103,10 @@ class BCSpreadsheetFiles(object):
                 continue
             try:
                 the_date = [tok.strip() for tok in toks[0].split(" ")]
-                year, month, day = [int(tok.strip()) for tok in the_date[0].split("-")]
+                try:
+                    year, month, day = [int(tok.strip()) for tok in the_date[0].split("-")]
+                except ValueError:
+                    month, day, year = [int(tok.strip()) for tok in the_date[0].split("/")]
                 if toks[1][-1] == '*':
                     toks[1] = toks[1][:-1]
                 the_hour = int(toks[1]) - 1
