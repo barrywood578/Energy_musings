@@ -51,7 +51,7 @@ class VA(object):
         return "%s%s%s" % (START_END, SEPARATOR.join(items), START_END)
 
 class YMDHData(object):
-    def __init__(self, ):
+    def __init__(self):
         self.dbase = {}
 
     def _get_keys_from_time(self, UTC):
@@ -85,11 +85,11 @@ class YMDHData(object):
         self.dbase[Y][M][D][H] = va
 
     def get_value(self, UTC):
-        Y, M, D, H = self._get_keys_from_time(UTC)
         try:
+            Y, M, D, H = self._get_keys_from_time(UTC)
             return self.dbase[Y][M][D][H].val
         except:
-            return 
+            return float("nan")
 
     def get_data(self, UTC):
         Y, M, D, H = self._get_keys_from_time(UTC)
@@ -112,8 +112,7 @@ class YMDHData(object):
 
     def adjust_values(self, UTC, interval, adj):
         hours = (interval.days * 24) + ceil(interval.seconds/3600.0)
-        for _ in range(0, hours):
-            y, m, d, h = self._get_keys_from_time(UTC)
+        for h_offset in range(0, hours):
+            y, m, d, h = self._get_keys_from_time(UTC + timedelta(hours=h_offset))
             newval = adj.adjust([self.dbase[y][m][d][h].val])[0]
             self.dbase[y][m][d][h].val = newval
-            src_UTC = src_UTC + timedelta(hours=1)

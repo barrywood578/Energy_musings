@@ -81,6 +81,14 @@ class TestYMDHData(unittest.TestCase):
         ymdh = YMDHData()
         self.assertEqual(ymdh.dbase, {})
 
+    def test_get_keys_from_time(self):
+        ymdh = YMDHData()
+        UTC = datetime(2006, 11, 11)
+        val = ymdh.get_value(UTC)
+        self.assertTrue(isnan(val))
+        val = ymdh.get_value("Not a Date")
+        self.assertTrue(isnan(val))
+
     def test_add_ymdh(self):
         UTC = datetime(2006, 1, 2, hour=5)
         ymdh = YMDHData()
@@ -192,10 +200,49 @@ class TestYMDHData(unittest.TestCase):
                 self.assertTrue(H in ymdh.dbase["2006"]["1"][D].keys())
                 self.assertEqual(ymdh.dbase["2006"]["1"][D][H].val, i)
                 self.assertEqual(len(ymdh.dbase["2006"]["1"][D][H].data_array), 1)
-                print("%d %s %s" % (i, D, ymdh.dbase["2006"]["1"][D][H].data_array))
                 self.assertEqual(len(ymdh.dbase["2006"]["1"][D][H].data_array[0]), 4)
                 self.assertEqual(ymdh.dbase["2006"]["1"][D][H].data_array[0][0], i+1)
                 self.assertEqual(ymdh.dbase["2006"]["1"][D][H].data_array[0][1], i+2)
                 self.assertEqual(ymdh.dbase["2006"]["1"][D][H].data_array[0][2], i+3)
                 self.assertEqual(ymdh.dbase["2006"]["1"][D][H].data_array[0][3], i+4)
 
+    def test_adjust_values(self):
+        start_time = datetime(2006, 1, 2, hour=0)
+        ymdh = YMDHData()
+        for i in range(0, 24):
+            UTC = start_time + timedelta(hours=i)
+            ymdh.add_ymdh(UTC, (i+1) * 100, [i+1, i+2, i+3, i+4])
+        interval = timedelta(hours=24)
+        new_time = start_time + timedelta(days=5)
+        adj = AdjustData()
+        ymdh.duplicate_data(start_time, new_time, interval, adj)
+        adj = AdjustData(abs_adj=100, ratio=1.1)
+        ymdh.adjust_values(start_time, interval, adj)
+
+        self.assertEqual(len(ymdh.dbase), 1)
+        self.assertTrue("2006" in ymdh.dbase.keys())
+        self.assertEqual(len(ymdh.dbase["2006"]), 1)
+        self.assertTrue("1" in ymdh.dbase["2006"].keys())
+        self.assertEqual(len(ymdh.dbase["2006"]["1"]), 2)
+        self.assertTrue("2" in ymdh.dbase["2006"]["1"].keys())
+        self.assertTrue("7" in ymdh.dbase["2006"]["1"].keys())
+        self.assertEqual(len(ymdh.dbase["2006"]["1"]["2"]), 24)
+        self.assertEqual(len(ymdh.dbase["2006"]["1"]["7"]), 24)
+
+        for D in ["2", "7"]:
+            for i in range(0, 24):
+                H = str(i)
+                self.assertTrue(H in ymdh.dbase["2006"]["1"][D].keys())
+                self.assertEqual(len(ymdh.dbase["2006"]["1"][D][H].data_array), 1)
+                self.assertEqual(len(ymdh.dbase["2006"]["1"][D][H].data_array[0]), 4)
+                self.assertEqual(ymdh.dbase["2006"]["1"][D][H].data_array[0][0], i+1)
+                self.assertEqual(ymdh.dbase["2006"]["1"][D][H].data_array[0][1], i+2)
+                self.assertEqual(ymdh.dbase["2006"]["1"][D][H].data_array[0][2], i+3)
+                self.assertEqual(ymdh.dbase["2006"]["1"][D][H].data_array[0][3], i+4)
+
+        D2 = "2"
+        D7 = "7"
+        for i in range(0, 24):
+            H = str(i)
+            self.assertEqual(ymdh.dbase["2006"]["1"][D2][H].val, 
+                             (ymdh.dbase["2006"]["1"][D7][H].val * 1.1) + 100)
