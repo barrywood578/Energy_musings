@@ -21,6 +21,7 @@ import copy
 from datetime import datetime, timezone, timedelta
 from math import ceil
 from common_defs import *
+from adjust_data import AdjustData
 
 class fp_mw(object):
     def __init__(self, fp="", mw=0.0):
@@ -108,17 +109,6 @@ class demand_hour(object):
         self.local_D   = str(the_list[8])
         self.local_H   = str(the_list[9])
         self.demand_MW = str(the_list[10])
-
-class adjust_data(object):
-    def __init__(self, abs_adj=0.0, ratio=1.0):
-        self.abs_adj = float(abs_adj)
-        self.ratio = float(ratio)
-
-    def adjust(self, data_set):
-        updata = []
-        for data in data_set:
-            updata.append((data * self.ratio) + self.abs_adj)
-        return updata
 
 class demand_file(object):
     demand_file_header = "File, LineNum, UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)"

@@ -5,7 +5,8 @@
 
 """
 
-from demand_file import demand_hour, demand_file, adjust_data
+from demand_file import demand_hour, demand_file
+from adjust_data import AdjustData
 from datetime import datetime, timezone, timedelta
 from common_defs import *
 from math import ceil
@@ -124,43 +125,6 @@ class TestDemandHour(unittest.TestCase):
 
         demand.add_demand_hour(list_1)
         self.assertRaises(ValueError, demand.add_demand_hour, list_2)
-
-class TestAdjustDemand(unittest.TestCase):
-
-    def setUp(self):
-        pass
-
-    def test_constants(self):
-        pass
-
-    def test_init(self):
-        adj = adjust_data()
-        self.assertEqual(adj.abs_adj, 0.0)
-        self.assertEqual(adj.ratio, 1.0)
-
-        adj = adjust_data(abs_adj="1000")
-        self.assertEqual(adj.abs_adj, 1000.0)
-        self.assertEqual(adj.ratio, 1.0)
-
-        adj = adjust_data(abs_adj=9999)
-        self.assertEqual(adj.abs_adj, 9999.0)
-        self.assertEqual(adj.ratio, 1.0)
-
-        adj = adjust_data(ratio="100")
-        self.assertEqual(adj.abs_adj, 0.0)
-        self.assertEqual(adj.ratio, 100.0)
-        adj = adjust_data(ratio=99)
-        self.assertEqual(adj.abs_adj, 0.0)
-        self.assertEqual(adj.ratio, 99.0)
-
-    def test_adjust(self):
-        adj = adjust_data(abs_adj = "100", ratio = "100")
-        upd = adj.adjust([100, 200, 300, 400])
-        self.assertEqual(len(upd), 4)
-        self.assertEqual(upd[0], (100 * 100) + 100)
-        self.assertEqual(upd[1], (200 * 100) + 100)
-        self.assertEqual(upd[2], (300 * 100) + 100)
-        self.assertEqual(upd[3], (400 * 100) + 100)
 
 class TestDemandFile(unittest.TestCase):
     file_header = ("File, LineNum, UTC_Year, UTC_Month, "
@@ -521,7 +485,7 @@ class TestDemandFile(unittest.TestCase):
             src_time = datetime(2006, 1, 1, hour=0)
             interval = timedelta(hours=24)
             new_time = src_time + interval
-            adj = adjust_data()
+            adj = AdjustData()
             df.duplicate_demand(src_time, new_time, interval, adj)
 
             self.assertEqual(len(df.dbase), 48)
@@ -540,7 +504,7 @@ class TestDemandFile(unittest.TestCase):
 
             interval = timedelta(hours=48)
             new_time = src_time + interval
-            adj = adjust_data(abs_adj=100, ratio=1.1)
+            adj = AdjustData(abs_adj=100, ratio=1.1)
             df.duplicate_demand(src_time, new_time, interval, adj)
 
             self.assertEqual(len(df.dbase), 96)
@@ -601,10 +565,10 @@ class TestDemandFile(unittest.TestCase):
             src_time = datetime(2006, 1, 1, hour=0)
             interval = timedelta(hours=24)
             new_time = src_time + interval
-            adj = adjust_data()
+            adj = AdjustData()
             df.duplicate_demand(src_time, new_time, interval, adj)
 
-            adj = adjust_data(abs_adj=50, ratio=0.9)
+            adj = AdjustData(abs_adj=50, ratio=0.9)
             df.adjust_demand(src_time, interval, adj)
 
             for hour in range (0, 24):
