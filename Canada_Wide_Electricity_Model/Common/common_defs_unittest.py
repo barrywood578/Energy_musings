@@ -9,6 +9,7 @@ import os
 import path
 from common_defs import *
 import unittest
+from math import isnan
 
 class TestConstants(unittest.TestCase):
 
@@ -25,6 +26,9 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(LOAD_ERROR, -1.0)
         self.assertEqual(DATE_FORMAT, '%Y-%m-%d %H:%M')
         
+        self.assertTrue(isnan(INVALID_VALUE))
+        self.assertEqual(INVALID_LIST, "INVALID")
+
         # The following lines confirm that all definitions in the
         # common_defs.py file are checked, assuming each definition
         # has exactly one '=' character.
@@ -33,7 +37,7 @@ class TestConstants(unittest.TestCase):
             file_path = "Common/common_defs.py"
         with open(file_path, 'r') as tempfile:
             counts = [line.strip().count('=') for line in tempfile.readlines()]
-        self.assertEqual(sum(counts), 8)
+        self.assertEqual(sum(counts), 10)
 
 if __name__ == '__main__':
     unittest.main()
