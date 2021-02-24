@@ -16,6 +16,16 @@ import os
 import logging
 import unittest
 from datetime import datetime, timezone
+
+curdir = os.path.dirname(os.path.abspath(__file__))
+par_dir = os.path.split(curdir)[0]
+if par_dir not in sys.path:
+    sys.path.append(par_dir)
+com_dir = os.path.abspath(os.path.join(par_dir, "../Common"))
+if com_dir not in sys.path:
+    sys.path.append(com_dir)
+# print("PQ: sys.path %s" % sys.path)
+
 from PQ_Spreadsheet_Files import PQSpreadsheetFiles
 
 class TestPQSpreadsheetFile(unittest.TestCase):

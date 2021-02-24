@@ -16,7 +16,7 @@ starting in on the 'model' part.
 THINGS TO RUN
 -------------
 All unit tests for all modules can be executed using the following:
-python -m unittest discover . -v -p '*unittest.py'
+python -m pytest
 
 Load data is assembled from a variety of files using a variety of methods.
 To generate all load data based on current files, execute:
