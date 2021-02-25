@@ -40,4 +40,5 @@ To generate all generator data based on current status, execute:
 
 NOTE: <KEY_FILE_NAME> is a file containing the key for the PVWatts web
 service on its first line.  This file is not necessary, but will result
-in faster execution.
+in faster execution. Key files are available for free.  Refer to 'api_key' 
+at https://developer.nrel.gov/docs/solar/pvwatts/v6/ for more information.
