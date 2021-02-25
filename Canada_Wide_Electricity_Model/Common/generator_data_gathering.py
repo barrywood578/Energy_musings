@@ -142,11 +142,12 @@ class GeneratorHTML(object):
         if ("off-grid" in location):
             logging.debug("Skipping %s" % location)
             return
-        logging.info("Querying PVWATTS, location %s" % location)
+        logging.info("Querying PVWATTS %38s %10.2f MW" % (location, float(capacity)))
         self.pv_solar.add_new_site(location+",Canada", '', '', float(capacity) * 1000.0)
 
     def map_table_to_generator_file(self, table, tz_string):
         fuel_idx = -1
+        heading = table.heading.replace("[edit]", "").strip()
         fuel = self.find_fuel(table.heading)
         logging.debug("Fuel from table heading: %s" % fuel)
         if fuel == '' or (fuel[0:5] == "HYDRO"):
@@ -156,9 +157,9 @@ class GeneratorHTML(object):
         cap_idx = self.find_capacity_column(table)
         loc_idx = self.find_location_column(table)
         if (cap_idx == -1) or ((fuel == '') and (fuel_idx == -1)):
-            logging.info("Skipping table %s" % table.heading)
-            logging.debug("Skipping table %s, no fuel %s %d or capacity %d" %
-                         (table.heading, fuel, fuel_idx, cap_idx))
+            logging.info("Skipping table  %25s" % heading)
+            logging.debug("Skipping table  %s, no fuel %s %d or capacity %d" %
+                         (heading, fuel, fuel_idx, cap_idx))
             return
 
         fuel_name = fuel
@@ -170,7 +171,7 @@ class GeneratorHTML(object):
                 fuel_name = self.find_fuel(row[fuel_idx])
             if fuel_name == '':
                 logging.info("Skipping table %s row %s, no fuel or capacity" %
-                             (table.heading, row))
+                             (heading, row))
                 continue
             capacity = row[cap_idx].strip()
             # Kludged few quick fixes to items in tables...
@@ -178,7 +179,7 @@ class GeneratorHTML(object):
                 capacity = "0.0"
             if capacity[0] == '(':
                 logging.info("Skipping table %s row %s, decommissioned." %
-                             (table.heading, row))
+                             (heading, row))
                 continue
             if capacity == "3Solar":
                 capacity = "3"
@@ -188,7 +189,7 @@ class GeneratorHTML(object):
             self.gen_file.add_generator([fuel_name, capacity, '', tz_string])
             if (fuel_name == "SOLAR_PV") and (not loc_idx == -1):
                 self.add_solar_site_data(row[loc_idx], capacity)
-        logging.info("Processed table %s" % (table.heading))
+        logging.info("Processed table %25s %10.2f MW" % (heading[0:25], self.gen_file.gen_db[fuel_name].mw))
 
     def map_tables_to_generator_file(self, tz_string):
         for table in self.tables:

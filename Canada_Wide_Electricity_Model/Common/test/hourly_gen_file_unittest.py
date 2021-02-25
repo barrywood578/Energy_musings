@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 """
-    Unit test for "pv solar file" support.
+    Unit test for "hourly generation file" support.
 """
 
-from pv_solar_file import pv_solar_file
+from hourly_gen_file import hourly_gen_file
 from datetime import datetime
 
 import sys
@@ -22,15 +22,15 @@ class TestPVSolarFile(unittest.TestCase):
         logging.disable(logging.NOTSET)
 
     def test_constants(self):
-        pv = pv_solar_file()
-        self.assertEqual(pv.pv_solar_file_header, ("UTC_Year, UTC_Month, UTC_Day, "
+        pv = hourly_gen_file()
+        self.assertEqual(pv.hourly_gen_file_header, ("UTC_Year, UTC_Month, UTC_Day, "
                                                    "UTC_Hour, Year, Month, Day, Hour, Capacity(kW)"))
 
     def test_init(self):
-        pv = pv_solar_file()
+        pv = hourly_gen_file()
         self.assertEqual(pv.capacity, [])
 
-    def test_read_pv_solar_file_success(self):
+    def test_read_hourly_gen_file_success(self):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'\n"
@@ -41,10 +41,10 @@ class TestPVSolarFile(unittest.TestCase):
                     "'2000', '2', '6', '13', '2000', '7', '8', '13', '345.0'\n"
                     "'2000', '2', '6', '14', '2000', '8', '9', '14', '100000.0'")
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
-            pv = pv_solar_file()
+            pv = hourly_gen_file()
             self.assertFalse(mock_file.called)
 
-            pv.read_pv_solar_file("TestFile")
+            pv.read_hourly_gen_file("TestFile")
             mock_file.assert_called_with("TestFile", 'r')
 
             lines = [line.strip() for line in file_data.split("\n")]
@@ -54,16 +54,16 @@ class TestPVSolarFile(unittest.TestCase):
                 for i in range(0,len(line)):
                     self.assertEqual(pv.capacity[li_no][2+i], line[i])
                 UTC = datetime(int(line[0]), int(line[1]), int(line[2]), hour=int(line[3]))
-                self.assertEqual(pv.get_pv_solar_capacity(UTC), float(line[8]))
+                self.assertEqual(pv.get_hourly_gen_capacity(UTC), float(line[8]))
 
     # Test bad header in file
-    def test_read_pv_solar_file_fail_1(self):
+    def test_read_hourly_gen_file_fail_1(self):
         file_data= ("Bad Header\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'\n")
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             with self.assertRaises(Exception) as context:
-                pv = pv_solar_file("TestFile")
+                pv = hourly_gen_file("TestFile")
                 self.assertEqual(pv.capacity, {})
 
             #print("\nHeader Context: '%s'" % str(context.exception))
@@ -73,13 +73,13 @@ class TestPVSolarFile(unittest.TestCase):
                              in str(context.exception))
 
     # Test bad delimiters
-    def test_read_pv_solar_file_fail_2(self):
+    def test_read_hourly_gen_file_fail_2(self):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "X2000', '1', '3', '8', '2000', '2', '3', '8Y\n")
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             with self.assertRaises(Exception) as context:
-                pv = pv_solar_file("TestFile")
+                pv = hourly_gen_file("TestFile")
                 self.assertTrue("2000" in pv.capacity)
                 self.assertTrue("1" in pv.capacity["2000"])
                 self.assertTrue("3" in pv.capacity["2000"]["1"])
@@ -95,13 +95,13 @@ class TestPVSolarFile(unittest.TestCase):
                              in str(context.exception))
 
     # Test bad date data
-    def test_read_pv_solar_file_fail_3(self):
+    def test_read_hourly_gen_file_fail_3(self):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'BADYEAR', '1', '3', '8', '2000', '2', '3', '8', '12300.0'\n")
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             with self.assertRaises(Exception) as context:
-                pv = pv_solar_file("TestFile")
+                pv = hourly_gen_file("TestFile")
                 self.assertTrue("2000" in pv.capacity)
                 self.assertTrue("1" in pv.capacity["2000"])
                 self.assertTrue("3" in pv.capacity["2000"]["1"])
@@ -119,13 +119,13 @@ class TestPVSolarFile(unittest.TestCase):
                              in str(context.exception))
 
     # Test bad capacity data
-    def test_read_pv_solar_file_fail_4(self):
+    def test_read_hourly_gen_file_fail_4(self):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'2000', '1', '3', '8', '2000', '2', '3', '8', 'BADCAP'\n")
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             with self.assertRaises(Exception) as context:
-                pv = pv_solar_file("TestFile")
+                pv = hourly_gen_file("TestFile")
                 self.assertTrue("2000" in pv.capacity)
                 self.assertTrue("1" in pv.capacity["2000"])
                 self.assertTrue("3" in pv.capacity["2000"]["1"])
@@ -143,13 +143,13 @@ class TestPVSolarFile(unittest.TestCase):
                              in str(context.exception))
 
     # Test wrong number of items in line
-    def test_read_pv_solar_file_fail_5(self):
+    def test_read_hourly_gen_file_fail_5(self):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'2000', '1', '3', '8', '2000', '2', '3', '8', '23456.0', 'Extra'\n")
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             with self.assertRaises(Exception) as context:
-                pv = pv_solar_file("TestFile")
+                pv = hourly_gen_file("TestFile")
                 self.assertTrue("2000" in pv.capacity)
                 self.assertTrue("1" in pv.capacity["2000"])
                 self.assertTrue("3" in pv.capacity["2000"]["1"])
@@ -170,7 +170,7 @@ class TestPVSolarFile(unittest.TestCase):
         data = [["2000", "1", "1", "0", "2000", "1", "1", "0", "0.0"],
                 ["2000", "12", "31", "23", "2000", "12", "31", "23", "1000000.0"]]
 
-        pv = pv_solar_file()
+        pv = hourly_gen_file()
         for item in data:
             U_Y, U_M, U_D, U_H, L_Y, L_M, L_D, L_H, Cap = pv.validate_fields("NoFile", 100,
                 item[0], item[1], item[2], item[3], item[4], item[5], item[6], item[7], item[8])
@@ -195,7 +195,7 @@ class TestPVSolarFile(unittest.TestCase):
                 ["2000", "1", "1", "0", "2000", "1", "1", "BadHour", "0.0"],
                 ["2000", "1", "1", "0", "2000", "1", "1", "0", "BadCap"]]
 
-        pv = pv_solar_file()
+        pv = hourly_gen_file()
         for item in data:
             with self.assertRaises(Exception) as context:
                 U_Y, U_M, U_D, U_H, L_Y, L_M, L_D, L_H, Cap = pv.validate_fields("NoFile", 100,
@@ -216,7 +216,7 @@ class TestPVSolarFile(unittest.TestCase):
                 ["2000", "12", "31", "23", "2000", "13", "31", "23", "1000000.0"],
                 ["2000", "12", "31", "23", "2000", "12", "32", "23", "1000000.0"],
                 ["2000", "12", "31", "23", "2000", "12", "31", "24", "1000000.0"]]
-        pv = pv_solar_file()
+        pv = hourly_gen_file()
         for item in data:
             with self.assertRaises(Exception) as context:
                 U_Y, U_M, U_D, U_H, L_Y, L_M, L_D, L_H, Cap = pv.validate_fields("NoFile", 100,
@@ -228,7 +228,7 @@ class TestPVSolarFile(unittest.TestCase):
     def test_validate_fields_failure_capacity(self):
         data = [ ["2000", "1", "1", "0", "2000", "1", "1", "0", "-1.0"],
                 ["2000", "12", "31", "23", "2000", "12", "31", "23", "1000000.1"]]
-        pv = pv_solar_file()
+        pv = hourly_gen_file()
         for item in data:
             with self.assertRaises(Exception) as context:
                 U_Y, U_M, U_D, U_H, L_Y, L_M, L_D, L_H, Cap = pv.validate_fields("NoFile", 100,
@@ -237,7 +237,7 @@ class TestPVSolarFile(unittest.TestCase):
             self.assertTrue("File NoFile Line 100 Data validation error."
                              in str(context.exception))
 
-    def test_get_pv_solar_capacity(self):
+    def test_get_hourly_gen_capacity(self):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'\n"
@@ -248,57 +248,57 @@ class TestPVSolarFile(unittest.TestCase):
                     "'2000', '2', '6', '13', '2000', '7', '8', '13', '345.0'\n"
                     "'2000', '2', '6', '14', '2000', '8', '9', '14', '100000.0'\n")
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
-            pv = pv_solar_file("TestFile")
+            pv = hourly_gen_file("TestFile")
             self.assertTrue(mock_file.called)
             mock_file.assert_called_with("TestFile", 'r')
 
             UTC = datetime(2000, 1, 3, hour=7)
-            cap = pv.get_pv_solar_capacity(UTC)
+            cap = pv.get_hourly_gen_capacity(UTC)
             self.assertEqual(cap, 123000.0)
 
             UTC = datetime(2000, 1, 3, hour=8)
-            cap = pv.get_pv_solar_capacity(UTC)
+            cap = pv.get_hourly_gen_capacity(UTC)
             self.assertEqual(cap, 12300.0)
 
             UTC = datetime(2000, 1, 4, hour=9)
-            cap = pv.get_pv_solar_capacity(UTC)
+            cap = pv.get_hourly_gen_capacity(UTC)
             self.assertEqual(cap, 1230.0)
 
             UTC = datetime(2000, 1, 4, hour=10)
-            cap = pv.get_pv_solar_capacity(UTC)
+            cap = pv.get_hourly_gen_capacity(UTC)
             self.assertEqual(cap, 123.0)
 
             UTC = datetime(2000, 2, 5, hour=11)
-            cap = pv.get_pv_solar_capacity(UTC)
+            cap = pv.get_hourly_gen_capacity(UTC)
             self.assertEqual(cap, 12.30)
 
             UTC = datetime(2000, 2, 5, hour=12)
-            cap = pv.get_pv_solar_capacity(UTC)
+            cap = pv.get_hourly_gen_capacity(UTC)
             self.assertEqual(cap, 1.230)
 
             UTC = datetime(2000, 2, 6, hour=13)
-            cap = pv.get_pv_solar_capacity(UTC)
+            cap = pv.get_hourly_gen_capacity(UTC)
             self.assertEqual(cap, 345.0)
 
             UTC = datetime(2000, 2, 6, hour=14)
-            cap = pv.get_pv_solar_capacity(UTC)
+            cap = pv.get_hourly_gen_capacity(UTC)
             self.assertEqual(cap, 100000.0)
 
             UTC = datetime(2000, 7,12, hour=2)
-            cap = pv.get_pv_solar_capacity(UTC)
+            cap = pv.get_hourly_gen_capacity(UTC)
             self.assertTrue(isnan(cap))
 
     @patch('builtins.print')
-    def test_write_pv_solar_file(self, mock_print):
+    def test_write_hourly_gen_file(self, mock_print):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'\n"
                     "'2000', '1', '4', '9', '2000', '3', '4', '9', '1230.0'\n"
                     "'2000', '1', '4', '10', '2000', '4', '5', '10', '123.0'\n")
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
-            pv = pv_solar_file("TestFile")
+            pv = hourly_gen_file("TestFile")
             self.assertTrue(mock_file.called)
-            pv.write_pv_solar_file()
+            pv.write_hourly_gen_file()
         self.assertEqual(mock_print.call_count, 5)
         calls = [call("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)",
                      file=sys.stdout),
@@ -313,17 +313,17 @@ class TestPVSolarFile(unittest.TestCase):
         mock_print.assert_has_calls(calls, any_order = False)
 
     @patch('builtins.print')
-    def test_write_pv_solar_file_realfile(self, mock_print):
+    def test_write_hourly_gen_file_realfile(self, mock_print):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'\n"
                     "'2000', '1', '4', '9', '2000', '3', '4', '9', '1230.0'\n"
                     "'2000', '1', '4', '10', '2000', '4', '5', '10', '123.0'\n")
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
-            pv = pv_solar_file("TestFile")
+            pv = hourly_gen_file("TestFile")
             self.assertTrue(mock_file.called)
             with patch("builtins.open", mock_open()) as mock_out:
-                pv.write_pv_solar_file("TestOut")
+                pv.write_hourly_gen_file("TestOut")
             self.assertEqual(mock_print.call_count, 5)
             calls = [call("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)",
                      file=mock_out()),

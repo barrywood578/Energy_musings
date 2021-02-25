@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 """
-    Support for the common "pv solar generation" file format.
+    Support for the common "hourly generation file" file format.
 
     Each file line contains:
     Universal Coordinated Time (UCT) Year, Month, Day, Hour
     Local Year, Month, Day, Hour
     Power in kilowatts, to one decimal place
-
+             =========
 """
 
 from optparse import OptionParser
@@ -21,26 +21,26 @@ from datetime import datetime, timezone, timedelta
 from ymdh_data import YMDHData, VA
 from common_defs import *
 
-class pv_solar_file(YMDHData):
-    pv_solar_file_header = "UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)"
+class hourly_gen_file(YMDHData):
+    hourly_gen_file_header = "UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)"
 
     def __init__(self, file_path = ""):
-        super(pv_solar_file, self).__init__()
+        super(hourly_gen_file, self).__init__()
         self.capacity = []
 
         if (file_path == ""):
             return
-        self.read_pv_solar_file(file_path)
+        self.read_hourly_gen_file(file_path)
 
-    def read_pv_solar_file(self, path):
+    def read_hourly_gen_file(self, path):
         lines = []
 
         with open(path, 'r') as the_file:
             lines = [line.strip() for line in the_file.readlines()]
 
-        if (lines[0] != self.pv_solar_file_header):
+        if (lines[0] != self.hourly_gen_file_header):
             raise ValueError("File header is '%s', not '%s'.  Halting." %
-                    (lines[0], self.pv_solar_file_header))
+                    (lines[0], self.hourly_gen_file_header))
 
         for line_num, line in enumerate(lines[1:]):
             if ((line[0] != START_END) or (line[-1] != START_END)):
@@ -54,7 +54,7 @@ class pv_solar_file(YMDHData):
                         (path, line_num+1, line))
 
             try:
-                self.add_pv_solar_hour(path, line_num+1,
+                self.add_hourly_gen_hour(path, line_num+1,
                                 toks[0], toks[1], toks[2], toks[3],
                                 toks[4], toks[5], toks[6], toks[7], toks[8])
             except ValueError as e:
@@ -90,7 +90,7 @@ class pv_solar_file(YMDHData):
 
         return U_Y, U_M, U_D, U_H, L_Y, L_M, L_D, L_H, float(Cap)
 
-    def add_pv_solar_hour(self, path, line_num,
+    def add_hourly_gen_hour(self, path, line_num,
                                 UTC_Y, UTC_M, UTC_D, UTC_H,
                                 Local_Y, Local_M, Local_D, Local_H, Capacity):
         (U_Y, U_M, U_D, U_H,
@@ -101,12 +101,12 @@ class pv_solar_file(YMDHData):
         data = [path, line_num, U_Y, U_M, U_D, U_H, L_Y, L_M, L_D, L_H, str(cap)]
         self.capacity.append(data)
         UTC = datetime(int(U_Y), int(U_M), int(U_D), hour=int(U_H))
-        self.add_ymdh(UTC, float(cap), data)
+        self.add_ymdh(UTC, float(cap), data, ignore_dup=True)
 
-    def get_pv_solar_capacity(self, UTC):
+    def get_hourly_gen_capacity(self, UTC):
         return self.get_value(UTC)
 
-    def write_pv_solar_file(self, filepath=''):
+    def write_hourly_gen_file(self, filepath=''):
         if len(self.capacity) == 0:
             if filepath == '':
                 print("PV Solar file is empty!")
@@ -116,7 +116,7 @@ class pv_solar_file(YMDHData):
         else:
             outfile = open(filepath, 'w')
 
-        print(self.pv_solar_file_header, file=outfile)
+        print(self.hourly_gen_file_header, file=outfile)
         for data in self.capacity:
             # Skip original file name and line number
             line_text = SEPARATOR.join(data[2:])
@@ -126,10 +126,10 @@ class pv_solar_file(YMDHData):
 
 def create_parser():
     parser = OptionParser(description="PV Solar file support.")
-    parser.add_option('-d', '--pv_solar',
-            dest = 'pv_solar_file_paths',
+    parser.add_option('-d', '--hourly_gen',
+            dest = 'hourly_gen_file_paths',
             action = 'store', type = 'string', default = "",
-            help = 'File path to pv_solar file.',
+            help = 'File path to hourly_gen file.',
             metavar = 'FILE')
     return parser
 
@@ -147,8 +147,8 @@ def main(argv = None):
         parser.print_help()
         return -1
 
-    pv_solar = pv_solar_file(options.pv_solar_file_paths)
-    pv_solar.write_pv_solar_file()
+    hourly_gen = hourly_gen_file(options.hourly_gen_file_paths)
+    hourly_gen.write_hourly_gen_file()
 
 if __name__ == '__main__':
     sys.exit(main())

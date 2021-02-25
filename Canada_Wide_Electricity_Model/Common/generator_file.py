@@ -19,10 +19,11 @@ from datetime import datetime, timezone
 from common_defs import *
 
 class generator(object):
-    def __init__(self, capacity=0.0, GHG_MWh=0.0, tz_string="Unknown"):
+    def __init__(self, capacity=0.0, GHG_MWh=0.0, tz_string="Unknown", gen_file="NoFile"):
         self.mw = float(capacity)
         self.ghg = float(GHG_MWh)
         self.tz_str = tz_string
+        self.gen_file = gen_file
 
 class generator_file(object):
     generator_file_header = "Fuel, Capacity, GHG_MWh, Timezone"
