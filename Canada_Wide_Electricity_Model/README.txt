@@ -12,6 +12,18 @@ Currently gathering hourly load data for all provinces,
 and generator data for all provinces, then
 starting in on the 'model' part.
 
+-------------------
+ORIGINAL DATA FILES
+-------------------
+Generally, the original data files for load and generation data are found
+within each provinces folder, along with descriptions of where the files came
+from.
+
+The major exception is Newfoundland and Labrador, which requires a large
+amount of data to be downloaded to a separate folder, as described in the
+10_Newfoundland_and_Labrador/Notes_and_URLs.txt file.  The scripts assume
+that this separate folder is Canada_Wide_Electricity_Model/www.pub.nl.ca.
+
 -------------
 THINGS TO RUN
 -------------
