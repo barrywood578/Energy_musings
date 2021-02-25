@@ -17,40 +17,16 @@ import sys
 import os
 import logging
 import copy
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from ymdh_data import YMDHData, VA
 from common_defs import *
 
-class pv_solar_hour(object):
-    def __init__(self, values = ["0000", "00", "00", "24", "000000.0"]):
-        self.local_Y = ""
-        self.local_M = ""
-        self.local_D = ""
-        self.local_H = ""
-        self.capacity_kW = 0.0
-        self.set_pv_solar_hour_to_list(values)
-
-    def get_list_from_pv_solar_hour(self):
-        return [self.local_Y,
-                self.local_M,
-                self.local_D,
-                self.local_H,
-                self.capacity_kW]
-
-    def set_pv_solar_hour_to_list(self, the_list):
-        if not (len(the_list) == 5):
-            raise ValueError("List must have 5 entries, not '%s'" %
-                              ','.join(the_list))
-        self.local_Y   = str(the_list[0])
-        self.local_M   = str(the_list[1])
-        self.local_D   = str(the_list[2])
-        self.local_H   = str(the_list[3])
-        self.capacity_kW = float(the_list[4])
-
-class pv_solar_file(object):
+class pv_solar_file(YMDHData):
     pv_solar_file_header = "UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)"
 
     def __init__(self, file_path = ""):
-        self.capacity = {}
+        super(pv_solar_file, self).__init__()
+        self.capacity = []
 
         if (file_path == ""):
             return
@@ -78,8 +54,9 @@ class pv_solar_file(object):
                         (path, line_num+1, line))
 
             try:
-                self.add_pv_solar_hour(path, line_num+1, toks[0], toks[1], toks[2], toks[3],
-                                                       toks[4], toks[5], toks[6], toks[7], toks[8])
+                self.add_pv_solar_hour(path, line_num+1,
+                                toks[0], toks[1], toks[2], toks[3],
+                                toks[4], toks[5], toks[6], toks[7], toks[8])
             except ValueError as e:
                 logging.warning("%s" % str(e))
                 raise ValueError("File %s Line %d Invalid format '%s'" %
@@ -113,27 +90,21 @@ class pv_solar_file(object):
 
         return U_Y, U_M, U_D, U_H, L_Y, L_M, L_D, L_H, float(Cap)
 
-    def add_pv_solar_hour(self, path, line_num, UTC_Y, UTC_M, UTC_D, UTC_H, Local_Y, Local_M, Local_D, Local_H, Capacity):
+    def add_pv_solar_hour(self, path, line_num,
+                                UTC_Y, UTC_M, UTC_D, UTC_H,
+                                Local_Y, Local_M, Local_D, Local_H, Capacity):
         (U_Y, U_M, U_D, U_H,
-         L_Y, L_M, L_D, L_H, cap) = self.validate_fields(path, line_num, UTC_Y, UTC_M, UTC_D, UTC_H,
-                                                     Local_Y, Local_M, Local_D, Local_H, Capacity)
-
-        if not U_Y in self.capacity.keys():
-            self.capacity[U_Y] = {}
-        if not U_M in self.capacity[U_Y].keys():
-            self.capacity[U_Y][U_M] = {}
-        if not U_D in self.capacity[U_Y][U_M].keys():
-            self.capacity[U_Y][U_M][U_D] = {}
-        if not U_H in self.capacity[U_Y][U_M][U_D].keys():
-            self.capacity[U_Y][U_M][U_D][U_H] = pv_solar_hour([L_Y, L_M, L_D, L_H, cap])
-            return
-        self.capacity[U_Y][U_M][U_D][U_H].capacity_kW += cap
+         L_Y, L_M, L_D, L_H, cap) = self.validate_fields(path, line_num,
+                                            UTC_Y, UTC_M, UTC_D, UTC_H,
+                                            Local_Y, Local_M, Local_D, Local_H,
+                                            Capacity)
+        data = [path, line_num, U_Y, U_M, U_D, U_H, L_Y, L_M, L_D, L_H, str(cap)]
+        self.capacity.append(data)
+        UTC = datetime(int(U_Y), int(U_M), int(U_D), hour=int(U_H))
+        self.add_ymdh(UTC, float(cap), data)
 
     def get_pv_solar_capacity(self, UTC):
-        try:
-            return self.capacity[str(UTC.year)][str(UTC.month)][str(UTC.day)][str(UTC.hour)].capacity_kW
-        except:
-            return LOAD_ERROR
+        return self.get_value(UTC)
 
     def write_pv_solar_file(self, filepath=''):
         if len(self.capacity) == 0:
@@ -144,17 +115,12 @@ class pv_solar_file(object):
             outfile = sys.stdout
         else:
             outfile = open(filepath, 'w')
+
         print(self.pv_solar_file_header, file=outfile)
-        for year in self.capacity.keys():
-            for month in self.capacity[year].keys():
-                for day in self.capacity[year][month].keys():
-                    for hour in self.capacity[year][month][day].keys():
-                        field_vals = [year, month, day, hour]
-                        solar_hour = self.capacity[year][month][day][hour].get_list_from_pv_solar_hour()
-                        field_vals.extend([str(x) for x in solar_hour])
-                        line_text = SEPARATOR.join(field_vals)
-                        print("%s%s%s" % (START_END, line_text, START_END),
-                                file=outfile)
+        for data in self.capacity:
+            # Skip original file name and line number
+            line_text = SEPARATOR.join(data[2:])
+            print("%s%s%s" % (START_END, line_text, START_END), file=outfile)
         if filepath != '':
             outfile.close()
 

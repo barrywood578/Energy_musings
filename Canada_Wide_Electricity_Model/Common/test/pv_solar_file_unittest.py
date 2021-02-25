@@ -4,7 +4,7 @@
     Unit test for "pv solar file" support.
 """
 
-from pv_solar_file import pv_solar_hour, pv_solar_file
+from pv_solar_file import pv_solar_file
 from datetime import datetime
 
 import sys
@@ -12,55 +12,7 @@ import unittest
 import mock
 from unittest.mock import patch, mock_open, call, MagicMock
 import logging
-
-class TestPVSolarHour(unittest.TestCase):
-    def setUp(self):
-        pass
-
-    def test_init(self):
-        pv_sh = pv_solar_hour()
-        self.assertEqual(pv_sh.local_Y, "0000")
-        self.assertEqual(pv_sh.local_M, "00")
-        self.assertEqual(pv_sh.local_D, "00")
-        self.assertEqual(pv_sh.local_H, "24")
-        self.assertEqual(pv_sh.capacity_kW, 0.0)
-
-        pv_sh = pv_solar_hour(["2011", "10", "9", "8", "123456.7"])
-        self.assertEqual(pv_sh.local_Y, "2011")
-        self.assertEqual(pv_sh.local_M, "10")
-        self.assertEqual(pv_sh.local_D, "9")
-        self.assertEqual(pv_sh.local_H, "8")
-        self.assertEqual(pv_sh.capacity_kW, 123456.7)
-
-    def test_get_list_from_pv_solar(self):
-        pv_sh = pv_solar_hour(["2011", "10", "9", "8", "123456.7"])
-        self.assertEqual(pv_sh.local_Y, "2011")
-        self.assertEqual(pv_sh.local_M, "10")
-        self.assertEqual(pv_sh.local_D, "9")
-        self.assertEqual(pv_sh.local_H, "8")
-        self.assertEqual(pv_sh.capacity_kW, 123456.7)
-
-        items = pv_sh.get_list_from_pv_solar_hour()
-        self.assertEqual(items[0], "2011")
-        self.assertEqual(items[1], "10")
-        self.assertEqual(items[2], "9")
-        self.assertEqual(items[3], "8")
-        self.assertEqual(items[4], 123456.7)
-
-    def test_set_pv_solar_hour_to_list_failure(self):
-
-        with self.assertRaises(Exception) as context:
-            pv_sh = pv_solar_hour(["2011", "10", "9", "8", "123456.7", 'extra'])
-        #print("\nList 1 Context: '%s'" % str(context.exception))
-        self.assertTrue("List must have 5 entries, not '2011,10,9,8,123456.7,extra'"
-                        in str(context.exception))
-
-        with self.assertRaises(Exception) as context2:
-            pv_sh = pv_solar_hour(["2011", "10", "9", "8 and missing"])
-        #print("\nList 2 Context: '%s'" % str(context2.exception))
-        self.assertTrue(("List must have 5 entries, not '2011,10,9,8 and missing'")
-                         in str(context2.exception))
-
+from math import isnan
 
 class TestPVSolarFile(unittest.TestCase):
     def setUp(self):
@@ -76,7 +28,7 @@ class TestPVSolarFile(unittest.TestCase):
 
     def test_init(self):
         pv = pv_solar_file()
-        self.assertEqual(pv.capacity, {})
+        self.assertEqual(pv.capacity, [])
 
     def test_read_pv_solar_file_success(self):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)\n"
@@ -94,20 +46,16 @@ class TestPVSolarFile(unittest.TestCase):
 
             pv.read_pv_solar_file("TestFile")
             mock_file.assert_called_with("TestFile", 'r')
-            self.assertEqual(len(pv.capacity.keys()), 1)
 
             lines = [line.strip() for line in file_data.split("\n")]
             lines = [[tok.strip() for tok in line[1:-1].split("', '")] for line in lines[1:]]
-            for line in lines:
-                self.assertTrue(line[0] in pv.capacity)
-                self.assertTrue(line[1] in pv.capacity[line[0]])
-                self.assertTrue(line[2] in pv.capacity[line[0]][line[1]])
-                self.assertTrue(line[3] in pv.capacity[line[0]][line[1]][line[2]])
-                self.assertEqual(pv.capacity[line[0]][line[1]][line[2]][line[3]].local_Y, line[4])
-                self.assertEqual(pv.capacity[line[0]][line[1]][line[2]][line[3]].local_M, line[5])
-                self.assertEqual(pv.capacity[line[0]][line[1]][line[2]][line[3]].local_D, line[6])
-                self.assertEqual(pv.capacity[line[0]][line[1]][line[2]][line[3]].local_H, line[7])
-                self.assertEqual(pv.capacity[line[0]][line[1]][line[2]][line[3]].capacity_kW, float(line[8]))
+            for li_no, line in enumerate(lines):
+                self.assertEqual(len(line), 9)
+                for i in range(0,len(line)):
+                    self.assertEqual(pv.capacity[li_no][2+i], line[i])
+                UTC = datetime(int(line[0]), int(line[1]), int(line[2]), hour=int(line[3]))
+                self.assertEqual(pv.get_pv_solar_capacity(UTC), float(line[8]))
+
     # Test bad header in file
     def test_read_pv_solar_file_fail_1(self):
         file_data= ("Bad Header\n"
@@ -338,7 +286,7 @@ class TestPVSolarFile(unittest.TestCase):
 
             UTC = datetime(2000, 7,12, hour=2)
             cap = pv.get_pv_solar_capacity(UTC)
-            self.assertEqual(cap, -1.0)
+            self.assertTrue(isnan(cap))
 
     @patch('builtins.print')
     def test_write_pv_solar_file(self, mock_print):

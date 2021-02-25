@@ -112,18 +112,10 @@ class demand_file(YMDHData):
     def __init__(self, file_path = ""):
         super(demand_file, self).__init__()
         self.demand = []
-        self.xref_load = {}
 
         if (file_path == ""):
             return
         self.read_demand_file(file_path)
-
-    def _get_xref_keys_from_time(self, UTC):
-        y = str(UTC.year)
-        m = str(UTC.month)
-        d = str(UTC.day)
-        h = str(UTC.hour)
-        return y, m, d, h
 
     def read_demand_file(self, path):
         lines = []

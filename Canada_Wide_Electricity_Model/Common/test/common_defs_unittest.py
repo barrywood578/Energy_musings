@@ -23,7 +23,6 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(EXCEL_FILE_EXTENSION, ".xlsx")
         self.assertEqual(CSV_FILE_EXTENSION, ".csv")
         self.assertEqual(PDF_FILE_EXTENSION, ".pdf")
-        self.assertEqual(LOAD_ERROR, -1.0)
         self.assertEqual(DATE_FORMAT, '%Y-%m-%d %H:%M')
         
         self.assertTrue(isnan(INVALID_VALUE))
@@ -37,7 +36,7 @@ class TestConstants(unittest.TestCase):
             file_path = "Common/common_defs.py"
         with open(file_path, 'r') as tempfile:
             counts = [line.strip().count('=') for line in tempfile.readlines()]
-        self.assertEqual(sum(counts), 10)
+        self.assertEqual(sum(counts), 9)
 
 if __name__ == '__main__':
     unittest.main()

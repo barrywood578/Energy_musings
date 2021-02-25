@@ -152,15 +152,6 @@ class TestDemandFile(unittest.TestCase):
             self.assertEqual(df.dbase, {})
             self.assertFalse(mock_file.called)
 
-    def test_get_xref_keys_from_time(self):
-        df = demand_file()
-        UTC = datetime(2020, 3, 1, hour=17, minute=33)
-        y, m, d, h = df._get_xref_keys_from_time(UTC)
-        self.assertEqual(y, '2020')
-        self.assertEqual(m, '3')
-        self.assertEqual(d, '1')
-        self.assertEqual(h, '17')
-
     def test_init_with_file(self):
         file_data = self.file_header + ("\n"
         "'test1.xlsx', '1', '2006', '11', '2', '8', '2006', '3', '4', '5', '6851.0'\n"
@@ -449,7 +440,6 @@ class TestDemandFile(unittest.TestCase):
             df.read_demand_file("TestFile")
             mock_file.assert_called_with("TestFile", 'r')
             self.assertEqual(len(df.demand), 2)
-            self.assertEqual(LOAD_ERROR, -1.0)
             UTC = datetime(2021,11, 2, hour=8, tzinfo=timezone.utc)
             self.assertTrue(isnan(df.get_demand(UTC)))
             UTC = datetime(2006,12, 2, hour=8, tzinfo=timezone.utc)
