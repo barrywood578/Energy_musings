@@ -53,6 +53,8 @@ class VA(object):
 class YMDHData(object):
     def __init__(self):
         self.dbase = {}
+        self.min_time = None
+        self.max_time = None
 
     def _get_keys_from_time(self, UTC):
         y = str(UTC.year)
@@ -62,6 +64,14 @@ class YMDHData(object):
         return y, m, d, h
 
     def add_ymdh(self, UTC, val, data, ignore_dup=False):
+        if self.min_time is None:
+            self.min_time = UTC
+            self.max_time = UTC
+        elif UTC < self.min_time:
+            self.min_time = UTC
+        elif UTC > self.max_time:
+            self.max_time = UTC
+
         va = VA(val, data)
         Y, M, D, H = self._get_keys_from_time(UTC)
 
@@ -85,18 +95,28 @@ class YMDHData(object):
         self.dbase[Y][M][D][H] = va
 
     def get_value(self, UTC):
-        try:
-            Y, M, D, H = self._get_keys_from_time(UTC)
-            return self.dbase[Y][M][D][H].val
-        except:
-            return float("nan")
+        data = self.get_data(UTC)
+        return data.val
 
     def get_data(self, UTC):
-        Y, M, D, H = self._get_keys_from_time(UTC)
+        try:
+            Y, M, D, H = self._get_keys_from_time(UTC)
+        except:
+            #print("Could not get keys from time...")
+            return VA(INVALID_VALUE)
         try:
             return self.dbase[Y][M][D][H]
         except:
-            return VA(INVALID_VALUE)
+            pass
+        #print("%s %s %s %s Not found" % (Y, M, D, H))
+        for Y in self.dbase.keys():
+            try:
+                #print("Trying %s %s %s %s" % (Y, M, D, H))
+                return self.dbase[Y][M][D][H]
+            except:
+                #print("%s %s %s %s Not Found" % (Y, M, D, H))
+                pass
+        return VA(INVALID_VALUE)
 
     def duplicate_data(self, UTC, new_UTC, interval, adjustment):
         hours = (interval.days * 24) + ceil(interval.seconds/3600.0)

@@ -440,13 +440,13 @@ class TestDemandFile(unittest.TestCase):
             df.read_demand_file("TestFile")
             mock_file.assert_called_with("TestFile", 'r')
             self.assertEqual(len(df.demand), 2)
-            UTC = datetime(2021,11, 2, hour=8, tzinfo=timezone.utc)
+            UTC = datetime(2021,9, 2, hour=8, tzinfo=timezone.utc)
             self.assertTrue(isnan(df.get_demand(UTC)))
-            UTC = datetime(2006,12, 2, hour=8, tzinfo=timezone.utc)
+            UTC = datetime(2006,9, 2, hour=8, tzinfo=timezone.utc)
             self.assertTrue(isnan(df.get_demand(UTC)))
-            UTC = datetime(2006,11, 3, hour=8, tzinfo=timezone.utc)
+            UTC = datetime(2006,9, 3, hour=8, tzinfo=timezone.utc)
             self.assertTrue(isnan(df.get_demand(UTC)))
-            UTC = datetime(2006,11, 2, hour=7, tzinfo=timezone.utc)
+            UTC = datetime(2006,9, 2, hour=7, tzinfo=timezone.utc)
             self.assertTrue(isnan(df.get_demand(UTC)))
 
     def test_duplicate_demand(self):

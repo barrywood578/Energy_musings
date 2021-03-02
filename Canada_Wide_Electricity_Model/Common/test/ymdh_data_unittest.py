@@ -159,6 +159,9 @@ class TestYMDHData(unittest.TestCase):
         ymdh.add_ymdh(UTC, 3.0, [1, 2, 3, 4])
         val = ymdh.get_value(UTC)
         self.assertEqual(val, 3.0)
+        UTC = datetime(2007, 1, 2, hour=5)
+        val = ymdh.get_value(UTC)
+        self.assertEqual(val, 3.0)
 
     def test_get_data(self):
         UTC = datetime(2006, 1, 2, hour=5)
