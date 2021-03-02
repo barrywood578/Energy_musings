@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 """
-    Support for British Columbia XLSX spreadsheet.
+    Support for Quebec XLSX spreadsheet.
 
     Computes UTC time for each local date/time,
     and outputs a load file in standard format.
@@ -168,11 +168,7 @@ class PQSpreadsheetFiles(object):
     def generate_demand_file(self):
         dst = False
         for month in sorted(self.min_vals.months.keys()):
-            if month > 11:
-                break
             for day in sorted(self.min_vals.months[month].keys()):
-                if month == 11 and day > 3:
-                    break
                 min_val = self.min_vals.months[month][day]
                 max_val = self.max_vals.months[month][day]
                 val_range = max_val.val - min_val.val
