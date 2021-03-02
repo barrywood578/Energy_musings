@@ -42,7 +42,7 @@ Common/grid.py -d 08_Nova_Scotia/load_db_NS.txt -g 08_Nova_Scotia/gen_db_NS.txt 
 check_rc 'Nova Scotia'
 
 echo 'Starting Prince Edward Island...'
-Common/grid.py -d 09_Prince_Edward_Island/load_db_PEI.txt -g 09_Prince_Edward_Island/gen_db_PEI.txt -w 09_Prince_Edward_Island/wind_gen_db_PEI.txt -s "2019-01-01 00:00" -e "2019-12-31 23:00"
+Common/grid.py -d 09_Prince_Edward_Island/load_db_PEI.txt -g 09_Prince_Edward_Island/gen_db_PEI.txt -w 09_Prince_Edward_Island/gen_wind_PEI_actual.txt -s "2019-01-01 00:00" -e "2019-12-31 23:00"
 check_rc 'Prince Edward Island Wind'
 
 echo 'Starting Newfoundland and Labrador...'
