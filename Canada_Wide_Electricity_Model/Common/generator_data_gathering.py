@@ -15,6 +15,7 @@ from lxml import etree
 import urllib3
 from generator_file import generator_file
 from solar_data_gathering import SolarGeneration
+from common_defs import *
 
 class my_table_info(object):
     def __init__(self, heading, columns, data):
@@ -96,27 +97,6 @@ class GeneratorHTML(object):
             tables += self.find_tables_in_tree(child, last_header)
         return tables
 
-    def find_fuel(self, target):
-        mapping_keywords = {
-            'NUCLEAR': ['nuclear'],
-            'HYDRO_RES': ['hydro', "reservoir"],
-            'HYDRO_RUN': ['hydro', "run of river", "run-of-the-river"],
-            'CO_GEN' : ['waste heat', 'blast furnace'],
-            'BIOMASS': ['biomass', 'biogas', 'waste'],
-            'NATGAS' : ['natural gas', 'dual fuel'],
-            'OIL' : ['fuel oil', 'diesel'],
-            'COAL': ['coal', 'coke'],
-            'WIND' : ['wind'],
-            'SOLAR_PV' : ['solar', 'photoelectric', 'photovoltaic'],
-            'STORAGE': ['battery', 'pumped']
-            }
-        target_l = target.strip().lower()
-        for key in mapping_keywords.keys():
-            for substr in mapping_keywords[key]:
-                if substr in target_l:
-                    return key
-        return ''
-
     def find_column(self, table, keywords):
         logging.debug("keywords: %s" % str(keywords))
         logging.debug("columns : %s" % str(table.column_names))
@@ -146,14 +126,12 @@ class GeneratorHTML(object):
         self.pv_solar.add_new_site(location+",Canada", '', '', float(capacity) * 1000.0)
 
     def map_table_to_generator_file(self, table, tz_string):
-        fuel_idx = -1
         heading = table.heading.replace("[edit]", "").strip()
-        fuel = self.find_fuel(table.heading)
+        fuel = ''
+        fuel_idx = self.find_fuel_column(table)
+        if fuel_idx == -1:
+            fuel = find_fuel(table.heading)
         logging.debug("Fuel from table heading: %s" % fuel)
-        if fuel == '' or (fuel[0:5] == "HYDRO"):
-            fuel_idx = self.find_fuel_column(table)
-            if fuel_idx != -1:
-                fuel = ''
         cap_idx = self.find_capacity_column(table)
         loc_idx = self.find_location_column(table)
         if (cap_idx == -1) or ((fuel == '') and (fuel_idx == -1)):
@@ -168,7 +146,7 @@ class GeneratorHTML(object):
             if row[0].strip().lower() == "total":
                 continue
             if fuel == '':
-                fuel_name = self.find_fuel(row[fuel_idx])
+                fuel_name = find_fuel(row[fuel_idx])
             if fuel_name == '':
                 logging.info("Skipping table %s row %s, no fuel or capacity" %
                              (heading, row))
@@ -189,7 +167,11 @@ class GeneratorHTML(object):
             self.gen_file.add_generator([fuel_name, capacity, '', tz_string])
             if (fuel_name == "SOLAR_PV") and (not loc_idx == -1):
                 self.add_solar_site_data(row[loc_idx], capacity)
-        logging.info("Processed table %25s %10.2f MW" % (heading[0:25], self.gen_file.gen_db[fuel_name].mw))
+        try:
+            logging.info("Processed table %25s %10.2f MW" %
+                         (heading[0:25], self.gen_file.gen_db[fuel_name].mw))
+        except:
+            logging.info("Processed table %25s %10.2f MW" % (heading[0:25], 0))
 
     def map_tables_to_generator_file(self, tz_string):
         for table in self.tables:

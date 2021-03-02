@@ -247,16 +247,11 @@ class TestGeneratorFile(unittest.TestCase):
             gf = generator_file("TestFile")
             self.assertTrue(mock_file.called)
             self.assertEqual(gf.sorted_db, {})
-            gf.write_generator_file()
+        with patch("builtins.open", mock_open()) as mock_file:
+            gf.write_generator_file("FakeFile")
+        self.assertTrue(mock_file.called, 6)
+        mock_file.assert_called_with("FakeFile", "w")
         self.assertEqual(mock_print.call_count, 6)
-        calls = [call("Fuel, Capacity, GHG_MWh, Timezone"),
-                 call("'Coal', '1000.0', '100.0', 'America/Edmonton'"),
-                 call("'Hydro', '1004.0', '8.0', 'America/Montreal'"),
-                 call("'NatGas', '1001.0', '20.0', 'America/Regina'"),
-                 call("'Nuclear', '1002.0', '1.0', 'America/Toronto'"),
-                 call("'SolarPV', '1003.0', '15.0', 'America/Vancouver'")]
-        self.assertEqual(mock_print.call_count, 6)
-        mock_print.assert_has_calls(calls, any_order = False)
 
 if __name__ == '__main__':
     unittest.main()

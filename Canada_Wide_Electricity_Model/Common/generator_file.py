@@ -21,7 +21,10 @@ from common_defs import *
 class generator(object):
     def __init__(self, capacity=0.0, GHG_MWh=0.0, tz_string="Unknown", gen_file="NoFile"):
         self.mw = float(capacity)
-        self.ghg = float(GHG_MWh)
+        try:
+            self.ghg = float(GHG_MWh)
+        except:
+            self.ghg = 0.0
         self.tz_str = tz_string
         self.gen_file = gen_file
 
@@ -100,18 +103,27 @@ class generator_file(object):
             raise ValueError("Cannot generate %f MW" % gen_mw)
         return tot_ghg
 
-    def write_generator_file(self):
-        if len(self.gen_db) == {}:
-            print("Generator file is empty!")
-            return
-        print(self.generator_file_header)
-        for key in sorted(self.gen_db.keys()):
-            if self.gen_db[key].mw <= 0.0:
-                continue
-            field_vals = [key, str(self.gen_db[key].mw), str(self.gen_db[key].ghg),
-                          self.gen_db[key].tz_str]
-            line_text = SEPARATOR.join(field_vals)
-            print("%s%s%s" % (START_END, line_text, START_END))
+    def write_generator_file(self, filepath=''):
+        try:
+            if filepath == '':
+                outfile = sys.stdout
+            else:
+                outfile = open(filepath, 'w')
+
+            if len(self.gen_db) == {}:
+                print("Generator file is empty!", file=outfile)
+                return
+            print(self.generator_file_header, file=outfile)
+            for key in sorted(self.gen_db.keys()):
+                if self.gen_db[key].mw <= 0.0:
+                    continue
+                field_vals = [key, str(self.gen_db[key].mw), str(self.gen_db[key].ghg),
+                              self.gen_db[key].tz_str]
+                line_text = SEPARATOR.join(field_vals)
+                print("%s%s%s" % (START_END, line_text, START_END), file=outfile)
+        finally:
+            if filepath != '':
+                outfile.close()
 
 def create_parser():
     parser = OptionParser(description="Generator file support.")

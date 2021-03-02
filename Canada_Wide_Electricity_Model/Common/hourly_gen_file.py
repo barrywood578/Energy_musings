@@ -109,7 +109,7 @@ class hourly_gen_file(YMDHData):
     def write_hourly_gen_file(self, filepath=''):
         if len(self.capacity) == 0:
             if filepath == '':
-                print("PV Solar file is empty!")
+                print("Generator file is empty!")
             return
         if filepath == '':
             outfile = sys.stdout
