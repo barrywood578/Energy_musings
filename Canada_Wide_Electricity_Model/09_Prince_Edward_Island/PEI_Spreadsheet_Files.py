@@ -22,6 +22,7 @@ import pytz
 sys.path.append('../Common')
 from common_defs import *
 from demand_file import *
+from hourly_gen_file import *
 
 class date_n_val(object):
     def __init__(self, the_date, the_val):
@@ -130,22 +131,15 @@ class date_val_list(object):
                          (month, day, hour, self.months[month][day][hour]))
 
 class PEISpreadsheetFiles(object):
-    def __init__(self, paths = [], all_csv_files = False, target_year = 2020):
+    def __init__(self, paths = [], demand =True, target_year = 2020):
         self.vals = date_val_list(target_year)
         self.target_year = target_year
-        self.demand_file = demand_file()
+        self.demand = demand
+        if self.demand:
+            self.demand_file = demand_file()
+        else:
+            self.demand_file = hourly_gen_file()
         self.files = []
-
-        if all_csv_files:
-            paths = []
-            file_list = [f for f in os.listdir('.') if os.path.isfile(f)]
-            for each_file in file_list:
-                filename, file_extension = os.path.splitext(each_file)
-                if file_extension != CSV_FILE_EXTENSION:
-                    continue
-                toks = [tok.strip() for tok in filename.split("_")]
-                if (str(target_year) in toks):
-                    paths.append(each_file)
 
         self.read_val_files(paths, self.vals)
         self.vals.extract_values()
@@ -183,17 +177,24 @@ class PEISpreadsheetFiles(object):
                     path, line, load = self.vals.months[month][day][hour]
                     if load < 0.0:
                         load = 0.0
-                    demand_hour = [path, line,
+                    if self.demand:
+                        self.demand_file.add_demand_hour([path, line,
                                    utc_dt.year, utc_dt.month, utc_dt.day, utc_dt.hour,
-                                   self.target_year, month, day, hour, load]
-                    self.demand_file.add_demand_hour(demand_hour)
+                                   self.target_year, month, day, hour, load])
+                    else:
+                        self.demand_file.add_hourly_gen_hour(path, line,
+                                   utc_dt.year, utc_dt.month, utc_dt.day, utc_dt.hour,
+                                   self.target_year, month, day, hour, load)
                     utc_dt = utc_dt + timedelta(hours = 1)
 
     def print_demand_file(self):
-        self.demand_file.write_demand_file()
+        if self.demand:
+            self.demand_file.write_demand_file()
+        else:
+            self.demand_file.write_hourly_gen_file()
 
 def create_parser():
-    parser = OptionParser(description="Support for Nova Scotia Hourly Load CSV files.")
+    parser = OptionParser(description="Support for Prince Edward Island Hourly Load CSV files.")
     parser.add_option('-c', '--csv',
             dest = 'csv_files',
             action = 'append', type = 'string', default = [],
@@ -204,10 +205,10 @@ def create_parser():
             action = 'store', type = 'int', default = 2020,
             help = 'Target year for daily load calculation.',
             metavar = 'year')
-    parser.add_option('-a', '--all',
-            dest = 'all_csv_files',
-            action = 'store_true', default = False,
-            help = 'Process all .csv files in this directory.',
+    parser.add_option('-n', '--not_demand',
+            dest = 'demand',
+            action = 'store_false', default = True,
+            help = 'Output a demand file or an hourly gen file.',
             metavar = 'FLAG')
     return parser
 
@@ -225,12 +226,12 @@ def main(argv = None):
         return -1
 
     ssheet = PEISpreadsheetFiles(options.csv_files,
-                                options.all_csv_files,
+                                options.demand,
                                 options.target_year)
     ## ssheet.vals.check_dates()
     ## ssheet.vals.print_vals()
     ssheet.create_demand_file()
-    ssheet.demand_file.write_demand_file()
+    ssheet.print_demand_file()
 
 if __name__ == '__main__':
     sys.exit(main())
