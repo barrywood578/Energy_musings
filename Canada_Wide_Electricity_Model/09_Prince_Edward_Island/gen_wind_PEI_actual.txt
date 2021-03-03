@@ -1,4 +1,4 @@
-UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)
+UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)
 '2020', '1', '1', '4', '2020', '1', '1', '0', '158.185482261272'
 '2020', '1', '1', '5', '2020', '1', '1', '1', '162.26866466078704'
 '2020', '1', '1', '6', '2020', '1', '1', '2', '138.79036586357552'

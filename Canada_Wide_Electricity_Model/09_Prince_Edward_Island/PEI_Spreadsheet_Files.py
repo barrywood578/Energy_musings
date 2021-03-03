@@ -22,7 +22,7 @@ import pytz
 sys.path.append('../Common')
 from common_defs import *
 from demand_file import *
-from hourly_gen_file import *
+from hourly_mw_file import HourlyMWFile
 
 class date_n_val(object):
     def __init__(self, the_date, the_val):
@@ -138,7 +138,7 @@ class PEISpreadsheetFiles(object):
         if self.demand:
             self.demand_file = demand_file()
         else:
-            self.demand_file = hourly_gen_file()
+            self.demand_file = HourlyMWFile()
         self.files = []
 
         self.read_val_files(paths, self.vals)
@@ -182,16 +182,16 @@ class PEISpreadsheetFiles(object):
                                    utc_dt.year, utc_dt.month, utc_dt.day, utc_dt.hour,
                                    self.target_year, month, day, hour, load])
                     else:
-                        self.demand_file.add_hourly_gen_hour(path, line,
-                                   utc_dt.year, utc_dt.month, utc_dt.day, utc_dt.hour,
-                                   self.target_year, month, day, hour, load)
+                        self.demand_file.add_mw_hour(path, line,
+                          [utc_dt.year, utc_dt.month, utc_dt.day, utc_dt.hour,
+                           self.target_year, month, day, hour, load])
                     utc_dt = utc_dt + timedelta(hours = 1)
 
     def print_demand_file(self):
         if self.demand:
             self.demand_file.write_demand_file()
         else:
-            self.demand_file.write_hourly_gen_file()
+            self.demand_file.write_hourly_mw_file()
 
 def create_parser():
     parser = OptionParser(description="Support for Prince Edward Island Hourly Load CSV files.")
@@ -208,7 +208,7 @@ def create_parser():
     parser.add_option('-n', '--not_demand',
             dest = 'demand',
             action = 'store_false', default = True,
-            help = 'Output a demand file or an hourly gen file.',
+            help = 'Output a demand file or an hourly mw file.',
             metavar = 'FLAG')
     return parser
 

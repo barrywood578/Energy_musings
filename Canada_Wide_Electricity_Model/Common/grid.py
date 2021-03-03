@@ -16,7 +16,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 from demand_file import demand_file
 from generator_file import generator_file
-from hourly_gen_file import hourly_gen_file
+from hourly_mw_file import HourlyMWFile
 from math import isnan, ceil
 
 from common_defs import *
@@ -29,9 +29,9 @@ class grid(object):
         self.pv_gen = None
         self.wind_gen = None
         if not pv_path == "":
-            self.pv_gen = hourly_gen_file(pv_path)
+            self.pv_gen = HourlyMWFile(pv_path)
         if not wind_path == "":
-            self.wind_gen = hourly_gen_file(wind_path)
+            self.wind_gen = HourlyMWFile(wind_path)
 
     def run(self, start_utc, end_utc):
         req_MWh = 0.0

@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 import logging
 import xml.etree.ElementTree as ET
 import urllib3
-import hourly_gen_file
+from hourly_mw_file import HourlyMWFile
 from common_defs import *
 
 class SolarGeneration(object):
@@ -58,10 +58,10 @@ class SolarGeneration(object):
     HOURLY_TIMEFRAME = '&timeframe=hourly'
     MONTHLY_TIMEFRAME = '&timeframe=monthly'
 
-    def __init__(self, key_file="", hourly_gen_path=""): 
+    def __init__(self, key_file="", hourly_mw_path=""):
         self.tables = []
-        self.pv = hourly_gen_file.hourly_gen_file()
-        self.hourly_gen_path = hourly_gen_path
+        self.pv = HourlyMWFile()
+        self.hourly_mw_path = hourly_mw_path
         self.http = urllib3.PoolManager()
         try:
             with open(key_file) as keyfile:
@@ -99,7 +99,7 @@ class SolarGeneration(object):
                 tilt = lat
         query = self.API+self.KEY+self.CAPACITY + ("%f" % capacity_kw)
         if address == "":
-            query += self.LAT + ("%d" % lat) + self.LON + ("%d" % lon) 
+            query += self.LAT + ("%d" % lat) + self.LON + ("%d" % lon)
         else:
             query += self.ADDRESS + address
         query += self.TILT + ("%d" % tilt)
@@ -148,14 +148,14 @@ class SolarGeneration(object):
 
         for idx, hour in enumerate(hours):
             capacity = float(hour.text) / 1000.0
-            self.pv.add_hourly_gen_hour(address, idx, UTC.year, UTC.month, UTC.day, UTC.hour,
+            self.pv.add_mw_hour(address, idx, [UTC.year, UTC.month, UTC.day, UTC.hour,
                                       l_tm.year, l_tm.month, l_tm.day, l_tm.hour,
-                                      capacity)
+                                      capacity])
             l_tm += one_hour
             UTC += one_hour
 
     def write_solar_generator_file(self):
-        self.pv.write_hourly_gen_file(self.hourly_gen_path)
+        self.pv.write_hourly_mw_file(self.hourly_mw_path)
 
 def create_parser():
     parser = OptionParser(description="Get solar generation data based on location and capacity of the solar array.")

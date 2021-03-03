@@ -28,7 +28,7 @@ if comdir not in sys.path:
 from common_defs import *
 from demand_file import *
 import generator_file
-import hourly_gen_file
+from hourly_mw_file import HourlyMWFile
 
 class AB_Spreadsheet_File(object):
     def __init__(self, file_paths = [], asset_paths = []):
@@ -46,7 +46,7 @@ class AB_Spreadsheet_File(object):
 
         self.fuel_gen_db = {}
         for fuel in self.gen_file.gen_db.keys():
-            self.fuel_gen_db[fuel] = hourly_gen_file.hourly_gen_file()
+            self.fuel_gen_db[fuel] = HourlyMWFile()
 
         for path in file_paths:
             try:
@@ -146,10 +146,9 @@ class AB_Spreadsheet_File(object):
                 for idx, tok in enumerate(toks):
                     if tok == '' or fuel_list[idx] == '':
                         continue
-                    self.fuel_gen_db[fuel_list[idx]].add_hourly_gen_hour(
-                             path, line_num,
-                             GMT_year, GMT_month, GMT_day, GMT_hour,
-                             loc_year, loc_month, loc_day, loc_hour, tok)
+                    ull = new_tuple[2:-1]
+                    ull.append(tok)
+                    self.fuel_gen_db[fuel_list[idx]].add_mw_hour(path, line_num, ull)
 
             except ValueError as e:
                 logging.warning("Error processing %s Line %d:%s" %
@@ -159,7 +158,7 @@ class AB_Spreadsheet_File(object):
 
     def write_fuel_gen_file(self, fuel, path):
         try:
-            self.fuel_gen_db[fuel].write_hourly_gen_file(path)
+            self.fuel_gen_db[fuel].write_hourly_mw_file(path)
         except:
             pass
 

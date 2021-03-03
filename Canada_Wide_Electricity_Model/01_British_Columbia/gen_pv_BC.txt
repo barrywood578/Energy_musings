@@ -1,4 +1,4 @@
-UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Capacity(kW)
+UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)
 '2019', '1', '1', '7', '2019', '1', '1', '0', '0.0'
 '2019', '1', '1', '8', '2019', '1', '1', '1', '0.0'
 '2019', '1', '1', '9', '2019', '1', '1', '2', '0.0'
