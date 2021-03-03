@@ -1,6 +1,9 @@
 Newfoundland and Labrador load data was extracted from the PDFs provided
 at http://www.pub.nl.ca/applications/IslandInterconnectedSystem/DemandStatusReports.htm.
 
+NOTE : It may be necessary to remove any cached copy of DemandStatusReports.htm
+       before updating this directory.
+
 The PDFs were downloaded with the following command:
 wget -r -c -l 2 --limit-rate=30k http://www.pub.nl.ca/applications/IslandInterconnectedSystem/DemandStatusReports.htm
 
