@@ -21,7 +21,7 @@ import pytz
 
 sys.path.append('../Common')
 from common_defs import *
-from demand_file import *
+from demand_file import DemandFile
 
 class date_n_val(object):
     def __init__(self, the_date, the_val):
@@ -133,7 +133,7 @@ class NSSpreadsheetFiles(object):
     def __init__(self, paths = [], all_csv_files = False, target_year = 2020):
         self.vals = date_val_list(target_year)
         self.target_year = target_year
-        self.demand_file = demand_file()
+        self.demand_file = DemandFile()
         self.files = []
 
         if all_csv_files:
@@ -184,11 +184,11 @@ class NSSpreadsheetFiles(object):
                     demand_hour = [path, line,
                                    utc_dt.year, utc_dt.month, utc_dt.day, utc_dt.hour,
                                    self.target_year, month, day, hour, load]
-                    self.demand_file.add_demand_hour(demand_hour)
+                    self.demand_file.add_mw_hour(path, line, demand_hour)
                     utc_dt = utc_dt + timedelta(hours = 1)
 
     def print_demand_file(self):
-        self.demand_file.write_demand_file()
+        self.demand_file.write_hourly_mw_file()
 
 def create_parser():
     parser = OptionParser(description="Support for Nova Scotia Hourly Load CSV files.")
@@ -228,7 +228,7 @@ def main(argv = None):
     ## ssheet.vals.check_dates()
     ## ssheet.vals.print_vals()
     ssheet.create_demand_file()
-    ssheet.demand_file.write_demand_file()
+    ssheet.demand_file.write_hourly_mw_file()
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -21,14 +21,14 @@ import pytz
 
 sys.path.append('../Common')
 from common_defs import *
-from demand_file import *
+from demand_file import DemandFile
 
 class NBSpreadsheetFiles(object):
     UNKNOWN_INDEX = -1
     def __init__(self, do_all_files = False, file_paths = []):
         self.lines = []
         self.files = []
-        self.demand_file = demand_file()
+        self.demand_file = DemandFile()
         self.dst = False
         self.hour_index = self.UNKNOWN_INDEX
         self.load_index = self.UNKNOWN_INDEX
@@ -146,7 +146,7 @@ class NBSpreadsheetFiles(object):
                 utc_y, utc_m, utc_d, utc_h = self._get_NB_UTC(year, month, day, the_hour, self.dst)
                 prev_hour = the_hour
 
-                self.demand_file.add_demand_hour([path, line_num,
+                self.demand_file.add_mw_hour(path, line_num, [path, line_num,
                                                   utc_y, utc_m, utc_d,    utc_h,
                                                   year , month,   day, the_hour, the_load])
             except ValueError as e:
@@ -160,7 +160,7 @@ class NBSpreadsheetFiles(object):
         self.parse_lines(path)
 
     def print_demand_file(self):
-        self.demand_file.write_demand_file()
+        self.demand_file.write_hourly_mw_file()
 
 def create_parser():
     parser = OptionParser(description="Support for New Brunswick Hourly Load CSV files.")

@@ -18,7 +18,7 @@ import pytz
 
 sys.path.append('../Common')
 from common_defs import *
-from demand_file import *
+from demand_file import DemandFile
 
 class date_n_val(object):
     def __init__(self, the_date, the_val, file_name, line_num):
@@ -65,7 +65,7 @@ class PQSpreadsheetFiles(object):
         self.min_vals = date_val_list(target_year)
         self.max_vals = date_val_list(target_year)
         self.curve = [[] for x in range(1, 25)]
-        self.demand_file = demand_file()
+        self.demand_file = DemandFile()
 
         self.read_val_files(min_paths, self.min_vals)
         self.read_val_files(max_paths, self.max_vals)
@@ -190,7 +190,7 @@ class PQSpreadsheetFiles(object):
                                         utc_y, utc_m, utc_d, utc_h - 1,
                                         min_val.year, month, day, hour - 1,
                                         min_val.val + ((self.curve[hour] + self.curve[hour - 1])/2.0 * val_range)]
-                                self.demand_file.add_demand_hour(d_h)
+                                self.demand_file.add_mw_hour(min_val.file_name, min_val.line_num, d_h)
                                 dst = False
                         prev_utc_h = utc_h
                     except:
@@ -200,10 +200,10 @@ class PQSpreadsheetFiles(object):
                             utc_y, utc_m, utc_d, utc_h,
                             min_val.year, month, day, hour,
                             min_val.val + (self.curve[hour] * val_range)]
-                    self.demand_file.add_demand_hour(d_h)
+                    self.demand_file.add_mw_hour(min_val.file_name, min_val.line_num, d_h)
 
     def print_demand_file(self):
-        self.demand_file.write_demand_file()
+        self.demand_file.write_hourly_mw_file()
 
 def create_parser():
     parser = OptionParser(description="Support for Quebec Extracted data files.")

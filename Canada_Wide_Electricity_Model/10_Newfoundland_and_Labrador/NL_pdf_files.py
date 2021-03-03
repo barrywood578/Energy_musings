@@ -23,7 +23,7 @@ import pytz
 
 sys.path.append('../Common')
 from common_defs import *
-from demand_file import *
+from demand_file import DemandFile
 
 class calibration_pixel(object):
     def __init__(self):
@@ -71,7 +71,7 @@ class NL_PDF_Processing(object):
 
         self.filepaths = sorted(filepaths)
         self.years = {}
-        self.demand_file = demand_file()
+        self.demand_file = DemandFile()
         self.annotate = annotate
         self.x_scale = 2
         self.y_scale = 2
@@ -500,7 +500,7 @@ class NL_PDF_Processing(object):
                 raise ValueError("%s: Could not make measurement for hour %d." % (self.filepath, hour))
             sample_y = float(start_pix[1] + end_pix[1])/2.0
             the_load = ((float(self.cal_y1.y) - sample_y) * value_per_pixel) + self.cal_y1.value
-            self.demand_file.add_demand_hour([self.filepath, hour,
+            self.demand_file.add_mw_hour(self.filepath, hour, [self.filepath, hour,
                                               time_utc.year, time_utc.month, time_utc.day, time_utc.hour,
                                               time_local.year, time_local.month, time_local.day, time_local.hour, the_load])
             # Annotate the measurement range and horizontal axis
@@ -609,7 +609,7 @@ class NL_PDF_Processing(object):
         self.pix.writePNG(png)
 
     def print_demand_file(self):
-        self.demand_file.write_demand_file()
+        self.demand_file.write_hourly_mw_file()
 
 def create_parser():
     parser = OptionParser(description="Fetches all Newfoundland and Labrador Daily Load Report Files.")

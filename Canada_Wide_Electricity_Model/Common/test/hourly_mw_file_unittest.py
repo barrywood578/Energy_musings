@@ -118,11 +118,11 @@ class TestHourlyMWFile(unittest.TestCase):
                              "'2000', '2', '3', '8', '12300.0''")
                              in str(context.exception))
 
-    # Test bad capacity data
+    # Test bad MW data
     def test_read_hourly_mw_file_fail_4(self):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
-                    "'2000', '1', '3', '8', '2000', '2', '3', '8', 'BADCAP'\n")
+                    "'2000', '1', '3', '8', '2000', '2', '3', '8', 'BADMW'\n")
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             with self.assertRaises(Exception) as context:
                 pv = HourlyMWFile("TestFile")
@@ -139,7 +139,7 @@ class TestHourlyMWFile(unittest.TestCase):
             # print("Context: '%s'" % str(context.exception))
             self.assertTrue(("File TestFile Line 2 Invalid format "
                              "''2000', '1', '3', '8', "
-                             "'2000', '2', '3', '8', 'BADCAP'")
+                             "'2000', '2', '3', '8', 'BADMW'")
                              in str(context.exception))
 
     # Test wrong number of items in line

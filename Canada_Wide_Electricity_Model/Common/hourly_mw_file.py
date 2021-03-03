@@ -101,6 +101,12 @@ class HourlyMWFile(YMDHData):
     def get_mw_hour(self, UTC):
         return self.get_value(UTC)
 
+    def duplicate_mw_hours(self, UTC, new_UTC, interval, adj):
+        self.duplicate_data(UTC, new_UTC, interval, adj)
+
+    def adjust_mw_hours(self, UTC, interval, adj):
+        self.adjust_values(UTC, interval, adj)
+
     def write_hourly_mw_file(self, filepath=''):
         if len(self.lines) == 0:
             if filepath == '':

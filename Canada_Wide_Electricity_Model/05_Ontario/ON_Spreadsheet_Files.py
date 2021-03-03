@@ -16,7 +16,7 @@ import pytz
 
 sys.path.append('../Common')
 from common_defs import *
-from demand_file import *
+from demand_file import DemandFile
 
 class minmax(object):
     def __init__(self, time_id="No Time", demand="No Demand"):
@@ -62,7 +62,7 @@ class ONSpreadsheetFiles(object):
     def __init__(self, file_paths=[], all_csv_files=False):
         self.files = []
         self.analysis_db = minmax_list()
-        self.demand_file = demand_file()
+        self.demand_file = DemandFile()
         self.dst = False
 
         if all_csv_files:
@@ -158,7 +158,7 @@ class ONSpreadsheetFiles(object):
                 utc_year, utc_month, utc_day, utc_hour, year, month, day, hour = self._get_ON_UTC(year, month, day, hour, dst)
 
             prev_utc_hour = utc_hour
-            self.demand_file.add_demand_hour([path, line_num,
+            self.demand_file.add_mw_hour(path, line_num, [path, line_num,
                       utc_year, utc_month, utc_day, utc_hour,
                           year,     month,     day,     hour, ont_demand])
             self.add_analysis(utc_year, utc_month, utc_day, utc_hour, mkt_demand, ont_demand)
@@ -297,7 +297,7 @@ def main(argv = None):
     Ontario = ONSpreadsheetFiles(options.file_names, options.all_csv_files)
 
     if (options.print_demand):
-        Ontario.demand_file.write_demand_file()
+        Ontario.demand_file.write_hourly_mw_file()
 
     if (options.print_min_max):
         Ontario.print_min_max()

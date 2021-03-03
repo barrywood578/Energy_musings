@@ -14,7 +14,7 @@ import sys
 import os
 import logging
 from datetime import datetime, timezone, timedelta
-from demand_file import demand_file
+from demand_file import DemandFile
 from generator_file import generator_file
 from hourly_mw_file import HourlyMWFile
 from math import isnan, ceil
@@ -24,7 +24,7 @@ from common_defs import *
 class grid(object):
     def __init__(self, demand_file_path="", generator_file_path="",
                        pv_path="", wind_path=""):
-        self.demand = demand_file(demand_file_path)
+        self.demand = DemandFile(demand_file_path)
         self.generator = generator_file(generator_file_path)
         self.pv_gen = None
         self.wind_gen = None
@@ -46,7 +46,7 @@ class grid(object):
                                                   end_utc.strftime(DATE_FORMAT),
                                                   hours))
         while start_utc < end_utc:
-            load = self.demand.get_demand(start_utc)
+            load = self.demand.get_mw_hour(start_utc)
             if isnan(load):
                 raise ValueError("No load for UTC %s" % start_utc.strftime(DATE_FORMAT))
             req_MWh += load

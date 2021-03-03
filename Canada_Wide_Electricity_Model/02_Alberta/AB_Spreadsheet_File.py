@@ -26,7 +26,7 @@ if comdir not in sys.path:
     sys.path.append(comdir)
 
 from common_defs import *
-from demand_file import *
+from demand_file import DemandFile
 import generator_file
 from hourly_mw_file import HourlyMWFile
 
@@ -36,7 +36,7 @@ class AB_Spreadsheet_File(object):
         self.load_lines = []
         self.files = []
         self.assets = {}
-        self.demand_file = demand_file()
+        self.demand_file = DemandFile()
 
         self.gen_file = generator_file.generator_file()
         for path in asset_paths:
@@ -141,7 +141,7 @@ class AB_Spreadsheet_File(object):
                 new_tuple = [path, line_num,
                              GMT_year, GMT_month, GMT_day, GMT_hour,
                              loc_year, loc_month, loc_day, loc_hour, the_load]
-                self.demand_file.add_demand_hour(new_tuple)
+                self.demand_file.add_mw_hour(path, line_num, new_tuple)
                 UMT = datetime(GMT_year, GMT_month, GMT_day, hour=GMT_hour)
                 for idx, tok in enumerate(toks):
                     if tok == '' or fuel_list[idx] == '':
@@ -237,7 +237,7 @@ def main(argv = None):
 
     ssheet = AB_Spreadsheet_File(options.excel_file_paths,
                                  options.asset_file_paths)
-    ssheet.demand_file.write_demand_file()
+    ssheet.demand_file.write_hourly_mw_file()
     if options.asset_file_paths!= []:
         if options.gen_file_from_assets != '':
             ssheet.gen_file.write_generator_file(options.gen_file_from_assets)
