@@ -18,6 +18,7 @@ import copy
 from datetime import datetime, timedelta
 from math import ceil, isnan
 from common_defs import *
+from adjust_data import AdjustData
 
 class VA(object):
     def __init__(self, val, data_iter=[]):
@@ -62,6 +63,26 @@ class YMDHData(object):
         d = str(UTC.day)
         h = str(UTC.hour)
         return y, m, d, h
+
+    def _determine_nearest_time(self, UTC):
+        if len(self.dbase.keys()) == 0:
+            raise ValueError("Database is empty, no key available!")
+        try:
+            y, m, d, h = self._get_keys_from_time(UTC)
+            val = self.dbase[y][m][d][h]
+            return UTC
+        except KeyError:
+            # Don't count on having another leap year present.
+            if m == "2" and d == "29":
+                d = "28"
+            # See if a different year has the same month/day/hour:
+            for Y in sorted(self.dbase.keys()):
+                try:
+                    val = self.dbase[Y][m][d][h]
+                    return datetime(int(Y), int(m), int(d), hour=int(h))
+                except KeyError:
+                    pass
+        raise ValueError("No other year has same Month/Day/Hour!")
 
     def add_ymdh(self, UTC, val, data, ignore_dup=False):
         if self.min_time is None:
@@ -118,13 +139,13 @@ class YMDHData(object):
                 pass
         return VA(INVALID_VALUE)
 
-    def duplicate_data(self, UTC, new_UTC, interval, adjustment):
+    def duplicate_data(self, UTC, new_UTC, interval, adjustment=AdjustData()):
         hours = (interval.days * 24) + ceil(interval.seconds/3600.0)
         for h_offset in range(0, hours):
             src_UTC = UTC + timedelta(hours=h_offset)
             trg_UTC = new_UTC + timedelta(hours=h_offset)
             y, m, d, h = self._get_keys_from_time(src_UTC)
-            vl = copy.copy(self.dbase[y][m][d][h])
+            vl = copy.deepcopy(self.dbase[y][m][d][h])
             newval = adjustment.adjust([vl.val])[0]
             self.add_ymdh(trg_UTC, newval, [])
             Y, M, D, H = self._get_keys_from_time(trg_UTC)
@@ -133,6 +154,54 @@ class YMDHData(object):
     def adjust_values(self, UTC, interval, adj):
         hours = (interval.days * 24) + ceil(interval.seconds/3600.0)
         for h_offset in range(0, hours):
-            y, m, d, h = self._get_keys_from_time(UTC + timedelta(hours=h_offset))
-            newval = adj.adjust([self.dbase[y][m][d][h].val])[0]
-            self.dbase[y][m][d][h].val = newval
+            curtime = UTC + timedelta(hours=h_offset)
+            y, m, d, h = self._get_keys_from_time(curtime)
+            try:
+                newval = adj.adjust([self.dbase[y][m][d][h].val])[0]
+                self.dbase[y][m][d][h].val = newval
+            except KeyError as e:
+                logging.critical("Data does not exist for %s" % (curtime.strftime(DATE_FORMAT)))
+                raise e
+
+    def verify_range(self, UTC, interval):
+        hours = (interval.days * 24) + ceil(interval.seconds/3600.0)
+        missing = []
+        start_time = None
+        start_incr = None
+        for hour in range(0, hours):
+            incr = timedelta(hours=hour)
+            UTC_i = UTC + incr
+            y, m, d, h = self._get_keys_from_time(UTC_i)
+            try:
+                val = self.dbase[y][m][d][h]
+                if start_time is not None:
+                    print("Append: %s %s" % (start_time.strftime(DATE_FORMAT), str(start_incr)))
+                    missing.append ([start_time, incr - start_incr])
+                    start_time = None
+                    start_incr = None
+            except:
+                if start_time is None:
+                    start_time = UTC_i
+                    start_incr = incr
+        if start_time is not None:
+            missing.append ([start_time, interval - start_incr])
+        return missing
+
+    def copy_nearest(self, UTC, interval):
+        hours = (interval.days * 24) + ceil(interval.seconds/3600.0)
+        one_hour = timedelta(hours=1)
+        for hour in range(0, hours):
+            incr = timedelta(hours=hour)
+            targ = UTC + incr
+            y, m, d, h = self._get_keys_from_time(targ)
+            try:
+                val = self.dbase[y][m][d][h]
+            except KeyError:
+                src = self._determine_nearest_time(targ)
+                self.duplicate_data(src, targ, one_hour)
+
+    def create_base(self, UTC, interval):
+        missing = self.verify_range(UTC, interval)
+        for miss_u, miss_i in missing:
+            self.copy_nearest(miss_u, miss_i)
+

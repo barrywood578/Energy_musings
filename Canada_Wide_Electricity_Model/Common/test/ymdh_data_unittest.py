@@ -247,5 +247,108 @@ class TestYMDHData(unittest.TestCase):
         D7 = "7"
         for i in range(0, 24):
             H = str(i)
-            self.assertEqual(ymdh.dbase["2006"]["1"][D2][H].val, 
+            self.assertEqual(ymdh.dbase["2006"]["1"][D2][H].val,
                              (ymdh.dbase["2006"]["1"][D7][H].val * 1.1) + 100)
+
+    def test_verify_range(self):
+        start_time = datetime(2006, 1, 2, hour=0)
+        ymdh = YMDHData()
+        for i in range(0, 24):
+            UTC = start_time + timedelta(hours=i)
+            ymdh.add_ymdh(UTC, (i+1) * 100, [i+1, i+2, i+3, i+4])
+
+            UTC = start_time + timedelta(hours=i+48)
+            ymdh.add_ymdh(UTC, (i+1) * 100 + 48, [i+1, i+2, i+3, i+4])
+
+            UTC = start_time + timedelta(hours=i+96)
+            ymdh.add_ymdh(UTC, (i+1) * 100 + 96, [i+1, i+2, i+3, i+4])
+
+        start_time = datetime(2006, 1, 1, hour=0)
+        missing = ymdh.verify_range(start_time, timedelta(days=5))
+        interval = timedelta(hours=24)
+        self.assertEqual(len(missing), 3)
+        self.assertEqual(missing[0][0], start_time)
+        self.assertEqual(missing[0][1], interval)
+        self.assertEqual(missing[1][0], start_time + interval + interval)
+        self.assertEqual(missing[1][1], interval)
+        self.assertEqual(missing[2][0], start_time + interval + interval + interval + interval)
+        self.assertEqual(missing[2][1], interval)
+
+    def test_copy_nearest(self):
+        start_time = datetime(2006, 1, 1, hour=5)
+        ymdh = YMDHData()
+        # Create a year long range of data
+        for i in range(0, 24*365):
+            UTC = start_time + timedelta(hours=i)
+            ymdh.add_ymdh(UTC, i+1, [i+1, i+2, i+3, i+4])
+
+        # Create a copy of that data for a New Year
+        start_time = datetime(2020, 1, 1, hour=0)
+        missing = ymdh.verify_range(start_time, timedelta(hours=24*365))
+        for miss_u, miss_i in missing:
+            ymdh.copy_nearest(miss_u, miss_i)
+
+    def test_determine_nearest_time(self):
+        start_time = datetime(2006, 1, 1, hour=5)
+        ymdh = YMDHData()
+        # Create a year long range of data
+        for d in range(0, 365):
+            for h in range(0, 24):
+                UTC = start_time + timedelta(days=d, hours=h)
+                i = (d*24) + h
+                ymdh.add_ymdh(UTC, i+1, [i+1, i+2, i+3, i+4])
+
+        UTC = datetime(2019, 1, 1, hour=0)
+        for i in range(0, 24*365):
+            target_time = UTC + timedelta(hours=i)
+            src_time = ymdh._determine_nearest_time(target_time)
+            y, m, d, h = ymdh._get_keys_from_time(src_time)
+            Y, M, D, H = ymdh._get_keys_from_time(target_time)
+            self.assertNotEqual(y, Y)
+            self.assertEqual(m, M)
+            self.assertEqual(d, D)
+            self.assertEqual(h, H)
+            self.assertTrue(y in ymdh.dbase.keys())
+
+    def test_create_base(self):
+        def local_check(d, h):
+            offset = timedelta(days=d, hours=h)
+            src_data = ymdh.get_data(start_time + offset)
+            trg_data = ymdh.get_data(target_time + offset)
+            self.assertEqual((trg_data.val * 1.1) + 1, src_data.val)
+            self.assertEqual(len(src_data.data_array), len(trg_data.data_array))
+            for x, y in zip (src_data.data_array, trg_data.data_array):
+                self.assertEqual(x, y)
+                self.assertFalse(x is y)
+
+        hr_offset = 5
+        start_time = datetime(2006, 1, 1, hour=hr_offset)
+        ymdh = YMDHData()
+        # Create a year long range of data
+        for d in range(0, 365):
+            for h in range(0, 24):
+                UTC = start_time + timedelta(days=d, hours=h)
+                i = (d*24) + h
+                ymdh.add_ymdh(UTC, i+1, [i+1, i+2, i+3, i+4])
+
+        target_time = datetime(2019, 1, 1, hour=0)
+        interval = timedelta(days=365)
+
+        ymdh.create_base(target_time, interval)
+        adj = AdjustData(abs_adj=1, ratio=1.1)
+        ymdh.adjust_values(start_time, interval, adj)
+
+        target_time = datetime(2019, 1, 1, hour=hr_offset)
+        for d in range(0, 365):
+            for h in range(0, 24):
+                local_check(d, h)
+                if d == 364 and h == (23 - hr_offset):
+                    break
+            if d == 364 and h == (23 - hr_offset):
+                break
+
+        start_time = datetime(2007, 1, 1, hour=0)
+        target_time = datetime(2019, 1, 1, hour=0)
+        d = 0
+        for h in range(0, hr_offset):
+            local_check(d, h)
