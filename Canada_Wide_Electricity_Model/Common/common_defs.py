@@ -29,24 +29,52 @@ FUEL_STORAGE = 'STORAGE'
 
 #########################
 
+KEYWORDS="keywords"
+FILENAME="filename"
+
+FILE_GEN_PV="gen_pv.txt"
+FILE_GEN_WIND="gen_wind.txt"
+FILE_LOAD_DB="load_db.txt"
+FILE_GEN_DB="gen_db.txt"
+
 MAPPING_KEYWORDS = {
-    FUEL_NUCLEAR : ['nuclear'],
-    FUEL_HYDRO_RESERVOIR : ['hydro', "reservoir"],
-    FUEL_HYDRO_RUN_OF_RVR : ['hydro', "run of river", "run-of-the-river"],
-    FUEL_CO_GEN : ['waste heat', 'blast furnace', 'cogeneration'],
-    FUEL_BIOMASS : ['biomass', 'biogas', 'waste', 'other'],
-    FUEL_NATURAL_GAS : ['natural gas', 'dual fuel', 'gas', 'simple_cycle', 'combined_cycle'],
-    FUEL_OIL : ['fuel oil', 'diesel'],
-    FUEL_COAL: ['coal', 'coke'],
-    FUEL_WIND : ['wind'],
-    FUEL_SOLAR_PV : ['solar', 'photoelectric', 'photovoltaic'],
-    FUEL_STORAGE : ['battery', 'pumped']
+    FUEL_NUCLEAR : {KEYWORDS: ['nuclear'],
+                    FILENAME:""},
+    FUEL_HYDRO_RESERVOIR :
+                   {KEYWORDS: ['hydro', "reservoir"],
+                    FILENAME:"gen_res.txt"},
+    FUEL_HYDRO_RUN_OF_RVR :
+                   {KEYWORDS: ['hydro', "run of river", "run-of-the-river"],
+                    FILENAME:"gen_rvr.txt"},
+    FUEL_CO_GEN :  {KEYWORDS: ['waste heat', 'blast furnace', 'cogeneration'],
+                    FILENAME:"gen_co.txt"},
+    FUEL_BIOMASS : {KEYWORDS: ['biomass', 'biogas', 'waste', 'landfill gas', 'digester gas', 'other'],
+                    FILENAME:"gen_bio.txt"},
+    FUEL_NATURAL_GAS :
+                   {KEYWORDS: ['natural gas', 'dual fuel', 'gas', 'simple_cycle', 'combined_cycle'],
+                    FILENAME:""},
+    FUEL_OIL :     {KEYWORDS: ['fuel oil', 'diesel'],
+                    FILENAME:""},
+    FUEL_COAL:     {KEYWORDS: ['coal', 'coke'],
+                    FILENAME:""},
+    FUEL_WIND :    {KEYWORDS: ['wind'],
+                    FILENAME: FILE_GEN_WIND},
+    FUEL_SOLAR_PV: {KEYWORDS: ['solar', 'photoelectric', 'photovoltaic'],
+                    FILENAME: FILE_GEN_PV},
+    FUEL_STORAGE : {KEYWORDS: ['battery', 'pumped'],
+                    FILENAME:""}
 }
 
 def find_fuel(target):
     target_l = target.strip().lower()
-    for key in MAPPING_KEYWORDS.keys():
-        for substr in MAPPING_KEYWORDS[key]:
+    for fuel in MAPPING_KEYWORDS.keys():
+        for substr in MAPPING_KEYWORDS[fuel][KEYWORDS]:
             if substr in target_l:
-                return key
+                return fuel
     return ''
+
+def get_filename(fuel):
+    try:
+        return MAPPING_KEYWORDS[fuel][FILENAME]
+    except KeyError:
+        return ''

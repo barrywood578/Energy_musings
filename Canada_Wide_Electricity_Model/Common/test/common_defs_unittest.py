@@ -40,6 +40,14 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(FUEL_SOLAR_PV, 'SOLAR_PV')
         self.assertEqual(FUEL_STORAGE, 'STORAGE')
 
+        self.assertEqual(KEYWORDS, 'keywords')
+        self.assertEqual(FILENAME, 'filename')
+
+        self.assertEqual(FILE_GEN_PV, 'gen_pv.txt')
+        self.assertEqual(FILE_GEN_WIND, 'gen_wind.txt')
+        self.assertEqual(FILE_LOAD_DB, 'load_db.txt')
+        self.assertEqual(FILE_GEN_DB, 'gen_db.txt')
+
     def test_find_fuel(self):
         self.assertEqual(find_fuel("NOFUEL"), '')
         self.assertEqual(find_fuel("nuclear"), 'NUCLEAR')
@@ -52,6 +60,9 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(find_fuel("cogeneration"), 'CO_GEN')
         self.assertEqual(find_fuel("biomass"), 'BIOMASS')
         self.assertEqual(find_fuel("biogas"), 'BIOMASS')
+        self.assertEqual(find_fuel("waste"), 'BIOMASS')
+        self.assertEqual(find_fuel("landfill gas"), 'BIOMASS')
+        self.assertEqual(find_fuel("digester gas"), 'BIOMASS')
         self.assertEqual(find_fuel("waste"), 'BIOMASS')
         self.assertEqual(find_fuel("other"), 'BIOMASS')
         self.assertEqual(find_fuel("natural gas"), 'NATGAS')
@@ -70,6 +81,19 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(find_fuel("battery"), 'STORAGE')
         self.assertEqual(find_fuel("pumped"), 'STORAGE')
 
+    def test_get_filename(self):
+        self.assertEqual(get_filename(FUEL_NUCLEAR), '')
+        self.assertEqual(get_filename(FUEL_HYDRO_RESERVOIR), 'gen_res.txt')
+        self.assertEqual(get_filename(FUEL_HYDRO_RUN_OF_RVR), 'gen_rvr.txt')
+        self.assertEqual(get_filename(FUEL_CO_GEN), 'gen_co.txt')
+        self.assertEqual(get_filename(FUEL_BIOMASS), 'gen_bio.txt')
+        self.assertEqual(get_filename(FUEL_NATURAL_GAS), '')
+        self.assertEqual(get_filename(FUEL_OIL), '')
+        self.assertEqual(get_filename(FUEL_COAL), '')
+        self.assertEqual(get_filename(FUEL_WIND), 'gen_wind.txt')
+        self.assertEqual(get_filename(FUEL_SOLAR_PV), 'gen_pv.txt')
+        self.assertEqual(get_filename(FUEL_STORAGE), '')
+
     def test_constants_completeness(self):
         # The following lines confirm that all definitions in the
         # common_defs.py file are checked, assuming each definition
@@ -79,7 +103,7 @@ class TestConstants(unittest.TestCase):
             file_path = "Common/common_defs.py"
         with open(file_path, 'r') as tempfile:
             counts = [line.strip().count('=') for line in tempfile.readlines()]
-        self.assertEqual(sum(counts), 22)
+        self.assertEqual(sum(counts), 28)
 
 if __name__ == '__main__':
     unittest.main()
