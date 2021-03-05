@@ -147,7 +147,8 @@ class SolarGeneration(object):
         one_hour = timedelta(hours = 1)
 
         for idx, hour in enumerate(hours):
-            capacity = float(hour.text) / 1000.0
+            # Capacity is returned in watts.  Convert to MW.
+            capacity = float(hour.text) / 1000000.0
             self.pv.add_mw_hour(address, idx, [UTC.year, UTC.month, UTC.day, UTC.hour,
                                       l_tm.year, l_tm.month, l_tm.day, l_tm.hour,
                                       capacity])
