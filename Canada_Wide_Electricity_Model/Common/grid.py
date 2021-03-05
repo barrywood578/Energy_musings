@@ -16,22 +16,19 @@ import logging
 from datetime import datetime, timezone, timedelta
 from demand_file import DemandFile
 from generator_file import generator_file
-from hourly_mw_file import HourlyMWFile
 from math import isnan, ceil
 
 from common_defs import *
 
 class grid(object):
-    def __init__(self, demand_file_path="", generator_file_path="",
-                       pv_path="", wind_path=""):
+    def __init__(self, demand_file_path="", generator_file_path=""):
         self.demand = DemandFile(demand_file_path)
         self.generator = generator_file(generator_file_path)
-        self.pv_gen = None
-        self.wind_gen = None
-        if not pv_path == "":
-            self.pv_gen = HourlyMWFile(pv_path)
-        if not wind_path == "":
-            self.wind_gen = HourlyMWFile(wind_path)
+
+    def create_base(self, start_utc, end_utc):
+        interval = end_utc - start_utc
+        self.demand.create_base(start_utc, interval)
+        self.generator.create_base(start_utc, interval)
 
     def run(self, start_utc, end_utc):
         req_MWh = 0.0
@@ -39,13 +36,13 @@ class grid(object):
         ghg = 0.0
         hours = 0
         brown_hours = 0
-        capacity = self.generator.get_total_capacity("NoDate")
         interval = end_utc - start_utc 
         hours = interval.days * 24 + ceil(interval.seconds / 3600) + 1
         print("Run from %s to %s.  %d hours." % ( start_utc.strftime(DATE_FORMAT),
                                                   end_utc.strftime(DATE_FORMAT),
                                                   hours))
         while start_utc < end_utc:
+            capacity = self.generator.get_total_capacity(start_utc)
             load = self.demand.get_mw_hour(start_utc)
             if isnan(load):
                 raise ValueError("No load for UTC %s" % start_utc.strftime(DATE_FORMAT))
@@ -54,7 +51,9 @@ class grid(object):
                 load = capacity
                 brown_hours += 1
             gen_MWh += load
-            ghg += self.generator.get_ghg_emissions(load)
+            ghg += self.generator.get_ghg_emissions(load, start_utc)
+            if isnan(ghg):
+                raise ValueError("%s GHG is NaN" % start_utc.strftime(DATE_FORMAT))
             start_utc += timedelta(hours=1)
         return req_MWh, gen_MWh, ghg, hours, brown_hours
 
@@ -69,16 +68,6 @@ def create_parser():
             dest = 'generator_path',
             action = 'store', type = 'string', default = "",
             help = 'File path to generator file.',
-            metavar = 'FILE')
-    parser.add_option('-p', '--pv',
-            dest = 'pv_path',
-            action = 'store', type = 'string', default = "",
-            help = 'File path to PV solar generation file. May or may not be present.',
-            metavar = 'FILE')
-    parser.add_option('-w', '--wind',
-            dest = 'wind_path',
-            action = 'store', type = 'string', default = "",
-            help = 'File path to wind generation file. May or may not be present.',
             metavar = 'FILE')
     parser.add_option('-s', '--start',
             dest = 'start_date',
@@ -99,14 +88,6 @@ def check_options(options):
     if not os.path.isfile(options.generator_path):
         raise ValueError("Generator file '%s' not found." % options.generator_path)
 
-    if not options.pv_path == "":
-        if not os.path.isfile(options.pv_path):
-            raise ValueError("PV Solar file '%s' not found." % options.pv_path)
-
-    if not options.wind_path == "":
-        if not os.path.isfile(options.wind_path):
-            raise ValueError("Wind file '%s' not found." % options.wind_path)
-
     try:
         start_date = datetime.strptime(options.start_date, DATE_FORMAT) 
     except:
@@ -120,7 +101,7 @@ def check_options(options):
     return start_date, end_date
 
 def main(argv = None):
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     parser = create_parser()
     if argv is None:
@@ -130,7 +111,9 @@ def main(argv = None):
     start, end = check_options(options)
 
     logging.info("Loading Files...")
-    the_grid = grid(options.demand_path, options.generator_path, options.pv_path, options.wind_path)
+    the_grid = grid(options.demand_path, options.generator_path)
+    logging.info("Creating load/generation baseline...")
+    the_grid.create_base(start,end)
     logging.info("Running Files...")
     req_MWh, gen_MWh, ghg, hours, brown_hours = the_grid.run(start, end)
     logging.info("Demand is %10.2f GWh" % (req_MWh/1000))

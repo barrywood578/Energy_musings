@@ -18,15 +18,15 @@ function check_rc(){
 }
 
 echo 'Starting British Columbia...'
-Common/grid.py -d 01_British_Columbia/load_db.txt -g 01_British_Columbia/gen_db.txt -p 01_British_Columbia/gen_pv.txt -s "2019-01-01 00:00" -e "2019-12-31 23:00"
+Common/grid.py -d 01_British_Columbia/load_db.txt -g 01_British_Columbia/gen_db.txt -s "2019-01-01 00:00" -e "2019-12-31 23:00"
 check_rc 'British Columbia'
 
 echo 'Starting Alberta...'
-Common/grid.py -d 02_Alberta/load_db.txt -g 02_Alberta/gen_db.txt -p 02_Alberta/gen_pv.txt -w 02_Alberta/gen_wind.txt -s "2019-01-01 00:00" -e "2019-12-31 23:00"
+Common/grid.py -d 02_Alberta/load_db.txt -g 02_Alberta/gen_db.txt -s "2019-01-01 00:00" -e "2019-12-31 23:00"
 check_rc 'Alberta'
 
 echo 'Starting Ontario...'
-Common/grid.py -d 05_Ontario/load_db.txt -g 05_Ontario/gen_db.txt -p 05_Ontario/gen_pv.txt -s "2019-01-01 00:00" -e "2019-12-31 23:00"
+Common/grid.py -d 05_Ontario/load_db.txt -g 05_Ontario/gen_db.txt -s "2019-01-01 00:00" -e "2019-12-31 23:00"
 check_rc 'Ontario'
 
 echo 'Starting Quebec...'
@@ -42,7 +42,7 @@ Common/grid.py -d 08_Nova_Scotia/load_db.txt -g 08_Nova_Scotia/gen_db.txt -s "20
 check_rc 'Nova Scotia'
 
 echo 'Starting Prince Edward Island...'
-Common/grid.py -d 09_Prince_Edward_Island/load_db.txt -g 09_Prince_Edward_Island/gen_db.txt -w 09_Prince_Edward_Island/gen_wind.txt -s "2019-01-01 00:00" -e "2019-12-31 23:00"
+Common/grid.py -d 09_Prince_Edward_Island/load_db.txt -g 09_Prince_Edward_Island/gen_db.txt -s "2019-01-01 00:00" -e "2019-12-31 23:00"
 check_rc 'Prince Edward Island Wind'
 
 echo 'Starting Newfoundland and Labrador...'

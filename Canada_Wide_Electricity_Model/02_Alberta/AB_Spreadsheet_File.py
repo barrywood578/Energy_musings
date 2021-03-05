@@ -191,7 +191,7 @@ class AB_Spreadsheet_File(object):
                               % (path, li_no+1, line))
                 continue
             self.assets[toks[0]] = fuel
-            self.gen_file.add_generator([fuel, toks[4], '', ''])
+            self.gen_file.add_generator([fuel, toks[4], '', ''], "")
 
 def create_parser():
     parser = OptionParser(description="Support for Alberta Hourly Load Detailed Excel file.")

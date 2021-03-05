@@ -43,6 +43,7 @@ class HourlyMWFile(YMDHData):
             raise ValueError("File header is '%s', not '%s'.  Halting." %
                     (lines[0], self.file_header))
 
+        logging.info("Loaded %s" % path)
         for line_num, line in enumerate(lines[1:]):
             if ((line[0] != START_END) or (line[-1] != START_END)):
                 raise ValueError("File %s Line %d delimiters '%s' '%s' not '%s'"

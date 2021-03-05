@@ -11,6 +11,7 @@ from generator_file import generator, generator_file
 import unittest
 import mock
 from unittest.mock import patch, mock_open, call
+from datetime import datetime
 
 class TestGenerator(unittest.TestCase):
 
@@ -28,6 +29,23 @@ class TestGenerator(unittest.TestCase):
         self.assertEqual(gen.ghg, 2.2)
         self.assertEqual(gen.tz_str, "America/Montreal")
 
+    @patch('os.path.isfile')
+    def test_add_gen_file(self, mock_isfile):
+        file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)\n"
+                    "'2000', '1', '1', '0', '2000', '1', '2', '7', '0.0'\n"
+                    "'2000', '1', '1', '1', '2000', '2', '3', '8', '1.0'\n"
+                    "'2000', '1', '1', '2', '2000', '3', '4', '9', '3.0'\n"
+                    "'2000', '1', '1', '3', '2000', '4', '5', '10', '5.0'\n")
+        mock_isfile.return_value = True
+        with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
+            gen = generator(300, 1000, "TimeZone", gen_path="TestFile")
+        self.assertTrue(mock_isfile.called)
+        mock_isfile.assert_called_with("TestFile")
+        self.assertEqual(gen.mw,  300)
+        self.assertEqual(gen.ghg, 1000)
+        self.assertEqual(gen.tz_str, "TimeZone")
+        self.assertEqual(len(gen.gen_files), 1)
+
 class TestGeneratorFile(unittest.TestCase):
     def setUp(self):
         pass
@@ -41,13 +59,15 @@ class TestGeneratorFile(unittest.TestCase):
         self.assertEqual(gf.gen_db, {})
         self.assertEqual(gf.sorted_db, {})
 
-    def test_read_generator_file_success(self):
+    @patch('os.path.isfile')
+    def test_read_generator_file_success(self, mock_isfile):
         file_data= ("Fuel, Capacity, GHG_MWh, Timezone\n" 
                     "'Coal', '1000', '100', 'America/Edmonton'\n"
                     "'NatGas', '1001', '20', 'America/Regina'\n"
                     "'Nuclear', '1002', '1', 'America/Toronto'\n"
                     "'SolarPV', '1003', '15', 'America/Vancouver'\n"
                     "'Hydro', '1004', '8', 'America/Montreal'\n")
+        mock_isfile.return_value = False
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             gf = generator_file()
             self.assertFalse(mock_file.called)
@@ -83,13 +103,15 @@ class TestGeneratorFile(unittest.TestCase):
 
             self.assertEqual(gf.sorted_db, {})
 
-    def test_read_generator_file_fail_1(self):
+    @patch('os.path.isfile')
+    def test_read_generator_file_fail_1(self, mock_isfile):
         file_data= ("Bad_Header\n" 
                     "'Coal', '1000', '100', 'America/Edmonton'\n"
                     "'NatGas', '1001', '20', 'America/Regina'\n"
                     "'Nuclear', '1002', '1', 'America/Toronto'\n"
                     "'SolarPV', '1003', '15', 'America/Vancouver'\n"
                     "'Hydro', '1004', '8', 'America/Montreal'\n")
+        mock_isfile.return_value = False
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             with self.assertRaises(Exception) as context:
                 gf = generator_file("TestFile")
@@ -99,9 +121,11 @@ class TestGeneratorFile(unittest.TestCase):
                              "'Fuel, Capacity, GHG_MWh, Timezone'.  Halting.")
                              in str(context.exception))
 
-    def test_read_generator_file_fail_2(self):
+    @patch('os.path.isfile')
+    def test_read_generator_file_fail_2(self, mock_isfile):
         file_data= ("Fuel, Capacity, GHG_MWh, Timezone\n" 
                     "'Coal', 'BadMW', '100', 'America/Edmonton'\n")
+        mock_isfile.return_value = False
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             with self.assertRaises(Exception) as context:
                 gf = generator_file("TestFile")
@@ -112,9 +136,11 @@ class TestGeneratorFile(unittest.TestCase):
                              ": 'Coal', 'BadMW', '100', 'America/Edmonton'")
                              in str(context.exception))
 
-    def test_read_generator_file_fail_3(self):
+    @patch('os.path.isfile')
+    def test_read_generator_file_fail_3(self, mock_isfile):
         file_data= ("Fuel, Capacity, GHG_MWh, Timezone\n" 
                     "'Coal', '1000', 'BADGHG', 'America/Edmonton'\n")
+        mock_isfile.return_value = False
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             with self.assertRaises(Exception) as context:
                 gf = generator_file("TestFile")
@@ -125,9 +151,11 @@ class TestGeneratorFile(unittest.TestCase):
                              "float: 'BADGHG'' : 'Coal', '1000', "
                              "'BADGHG', 'America/Edmonton'") in str(context.exception))
 
-    def test_read_generator_file_fail_4(self):
+    @patch('os.path.isfile')
+    def test_read_generator_file_fail_4(self, mock_isfile):
         file_data= ("Fuel, Capacity, GHG_MWh, Timezone\n" 
                     "'Coal', '1000', '100'\n")
+        mock_isfile.return_value = False
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             with self.assertRaises(Exception) as context:
                 gf = generator_file("TestFile")
@@ -137,112 +165,130 @@ class TestGeneratorFile(unittest.TestCase):
                              "Error 'list index out of range' : "
                              "'Coal', '1000', '100'") in str(context.exception))
 
-    def test_get_total_capacity(self):
+    @patch('os.path.isfile')
+    def test_get_total_capacity(self, mock_isfile):
         file_data= ("Fuel, Capacity, GHG_MWh, Timezone\n" 
                     "'Coal', '1000', '100', 'America/Edmonton'\n"
                     "'NatGas', '1001', '20', 'America/Regina'\n"
                     "'Nuclear', '1002', '1', 'America/Toronto'\n"
                     "'SolarPV', '1003', '15', 'America/Vancouver'\n"
                     "'Hydro', '1004', '8', 'America/Montreal'\n")
+        mock_isfile.return_value = False
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             gf = generator_file("TestFile")
             self.assertTrue(mock_file.called)
             tot_cap = gf.get_total_capacity("NoDate")
             self.assertEqual(tot_cap, 5010.0)
 
-    def test_get_ghg_emissions_success(self):
+    @patch('os.path.isfile')
+    def test_get_ghg_emissions_success(self, mock_isfile):
         file_data= ("Fuel, Capacity, GHG_MWh, Timezone\n" 
                     "'Coal', '1000', '100', 'America/Edmonton'\n"
                     "'NatGas', '1001', '20', 'America/Regina'\n"
                     "'Nuclear', '1002', '1', 'America/Toronto'\n"
                     "'SolarPV', '1003', '15', 'America/Vancouver'\n"
                     "'Hydro', '1004', '8', 'America/Montreal'\n")
+        mock_isfile.return_value = False
+        date = datetime(2000, 1, 1, hour=0)
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             gf = generator_file("TestFile")
             self.assertTrue(mock_file.called)
             self.assertEqual(gf.sorted_db, {})
-            tot_cap = gf.get_total_capacity("NoDate")
+            tot_cap = gf.get_total_capacity(date) 
             self.assertEqual(tot_cap, 5010.0)
             self.assertEqual(gf.sorted_db, {})
 
-            ghg = gf.get_ghg_emissions(1000.0)
+            ghg = gf.get_ghg_emissions(1000.0, date)
             self.assertEqual(ghg, 1000*1)
 
-            ghg = gf.get_ghg_emissions(2000.0)
+            ghg = gf.get_ghg_emissions(2000.0, date)
             self.assertEqual(ghg, 1002*1 + 998*8)
 
-            ghg = gf.get_ghg_emissions(3000.0)
+            ghg = gf.get_ghg_emissions(3000.0, date)
             self.assertEqual(ghg, 1002*1 + 1004*8 + 994*15)
 
-            ghg = gf.get_ghg_emissions(4000.0)
+            ghg = gf.get_ghg_emissions(4000.0, date)
             self.assertEqual(ghg, 1002*1 + 1004*8 + 1003*15 + 991*20)
 
-            ghg = gf.get_ghg_emissions(5000.0)
+            ghg = gf.get_ghg_emissions(5000.0, date)
             self.assertEqual(ghg, 1002*1 + 1004*8 + 1003*15 + 1001*20 + 990*100)
 
-            ghg = gf.get_ghg_emissions(5010.0)
+            ghg = gf.get_ghg_emissions(5010.0, date)
             self.assertEqual(ghg, 1002*1 + 1004*8 + 1003*15 + 1001*20 + 1000*100)
 
-    def test_add_generator_success(self):
+    @patch('os.path.isfile')
+    def test_add_generator_success(self, mock_isfile):
         file_data= ("Fuel, Capacity, GHG_MWh, Timezone\n" 
                     "'Coal', '10,000', '100', 'America/Edmonton'\n"
                     "'NatGas', '11,001', '20', 'America/Regina'\n"
                     "'Nuclear', '12,002', '1', 'America/Toronto'\n"
                     "'SolarPV', '13,003', '15', 'America/Vancouver'\n"
                     "'Hydro', '14,004', '8', 'America/Montreal'\n")
+        mock_isfile.return_value = False
+        date = datetime(2000, 1, 1, hour=0)
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             gf = generator_file("TestFile")
             self.assertTrue(mock_file.called)
             self.assertEqual(gf.sorted_db, {})
-            tot_cap = gf.get_total_capacity("NoDate")
+            tot_cap = gf.get_total_capacity(date)
             self.assertEqual(tot_cap, 60010.0)
             self.assertEqual(gf.sorted_db, {})
 
-            gf.add_generator(['Coal', '9,876', '20', 'America/Regina'])
+            gf.add_generator(['Coal', '9,876', '20', 'America/Regina'], "")
             self.assertEqual(gf.gen_db['Coal'].mw, 19876.0)
             self.assertEqual(gf.gen_db['Coal'].ghg, 20.0)
             self.assertEqual(gf.gen_db['Coal'].tz_str, 'America/Regina')
+            self.assertEqual(gf.gen_db['Coal'].gen_files, [])
+            self.assertTrue(gf.gen_db['Coal'].min_time is None)
+            self.assertTrue(gf.gen_db['Coal'].max_time is None)
 
-            gf.add_generator(['NatGas', '0.0', '99.0', ''])
+            gf.add_generator(['NatGas', '0.0', '99.0', ''], "")
             self.assertEqual(gf.gen_db['NatGas'].mw, 11001.0)
             self.assertEqual(gf.gen_db['NatGas'].ghg, 99.0)
             self.assertEqual(gf.gen_db['NatGas'].tz_str, 'America/Regina')
+            self.assertEqual(gf.gen_db['NatGas'].gen_files, [])
+            self.assertTrue(gf.gen_db['NatGas'].min_time is None)
+            self.assertTrue(gf.gen_db['NatGas'].max_time is None)
 
-            gf.add_generator(['Nuclear', '0.0', '', 'NewTimeZone'])
+            gf.add_generator(['Nuclear', '0.0', '', 'NewTimeZone'], "")
             self.assertEqual(gf.gen_db['Nuclear'].mw, 12002.0)
             self.assertEqual(gf.gen_db['Nuclear'].ghg, 1.0)
             self.assertEqual(gf.gen_db['Nuclear'].tz_str, 'NewTimeZone')
+            self.assertEqual(gf.gen_db['Nuclear'].gen_files, [])
+            self.assertTrue(gf.gen_db['Nuclear'].min_time is None)
+            self.assertTrue(gf.gen_db['Nuclear'].max_time is None)
 
 
-    def test_get_ghg_emissions_failure(self):
+    @patch('os.path.isfile')
+    def test_get_ghg_emissions_failure(self, mock_isfile):
         file_data= ("Fuel, Capacity, GHG_MWh, Timezone\n" 
                     "'Coal', '1000', '100', 'America/Edmonton'\n"
                     "'NatGas', '1001', '20', 'America/Regina'\n"
                     "'Nuclear', '1002', '1', 'America/Toronto'\n"
                     "'SolarPV', '1003', '15', 'America/Vancouver'\n"
                     "'Hydro', '1004', '8', 'America/Montreal'\n")
+        mock_isfile.return_value = False
+        date = datetime(2000, 1, 1, hour=0)
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             gf = generator_file("TestFile")
             self.assertTrue(mock_file.called)
             self.assertEqual(gf.sorted_db, {})
-            tot_cap = gf.get_total_capacity("NoDate")
+            tot_cap = gf.get_total_capacity(date)
             self.assertEqual(tot_cap, 5010.0)
             self.assertEqual(gf.sorted_db, {})
 
-            with self.assertRaises(Exception) as context:
-                ghg = gf.get_ghg_emissions(6000.0)
+            ghg = gf.get_ghg_emissions(6000.0, date)
 
-            # print("Context: '%s'" % str(context.exception))
-            self.assertTrue("Cannot generate 6000.000000 MW" in str(context.exception))
-
+    @patch('os.path.isfile')
     @patch('builtins.print')
-    def test_write_generator_file(self, mock_print):
+    def test_write_generator_file(self, mock_print, mock_isfile):
         file_data= ("Fuel, Capacity, GHG_MWh, Timezone\n" 
                     "'Coal', '1000', '100', 'America/Edmonton'\n"
                     "'NatGas', '1001', '20', 'America/Regina'\n"
                     "'Nuclear', '1002', '1', 'America/Toronto'\n"
                     "'SolarPV', '1003', '15', 'America/Vancouver'\n"
                     "'Hydro', '1004', '8', 'America/Montreal'\n")
+        mock_isfile.return_value = False
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             gf = generator_file("TestFile")
             self.assertTrue(mock_file.called)

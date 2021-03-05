@@ -164,7 +164,7 @@ class GeneratorHTML(object):
             if capacity == r"829[4]":
                 capacity = "829"
             logging.debug("%s:%s" % (fuel_name, capacity))
-            self.gen_file.add_generator([fuel_name, capacity, '', tz_string])
+            self.gen_file.add_generator([fuel_name, capacity, '', tz_string], "")
             if (fuel_name == "SOLAR_PV") and (not loc_idx == -1):
                 self.add_solar_site_data(row[loc_idx], capacity)
         try:
