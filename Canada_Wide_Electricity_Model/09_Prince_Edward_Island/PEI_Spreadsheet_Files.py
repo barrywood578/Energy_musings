@@ -225,7 +225,7 @@ def main(argv = None):
     ssheet = PEISpreadsheetFiles(options.csv_files,
                                 options.demand,
                                 options.target_year)
-    ## ssheet.vals.check_dates()
+    ssheet.vals.check_dates()
     ## ssheet.vals.print_vals()
     ssheet.create_demand_file()
     ssheet.print_demand_file()
