@@ -175,7 +175,6 @@ class YMDHData(object):
             try:
                 val = self.dbase[y][m][d][h]
                 if start_time is not None:
-                    print("Append: %s %s" % (start_time.strftime(DATE_FORMAT), str(start_incr)))
                     missing.append ([start_time, incr - start_incr])
                     start_time = None
                     start_incr = None
