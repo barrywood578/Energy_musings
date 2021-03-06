@@ -30,7 +30,8 @@ class TestHourlyMWFile(unittest.TestCase):
         pv = HourlyMWFile()
         self.assertEqual(pv.lines, [])
 
-    def test_read_hourly_mw_file_success(self):
+    @patch('os.path.isfile')
+    def test_read_hourly_mw_file_success(self, mock_isfile):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'\n"
@@ -40,10 +41,12 @@ class TestHourlyMWFile(unittest.TestCase):
                     "'2000', '2', '5', '12', '2000', '6', '7', '12', '1.23'\n"
                     "'2000', '2', '6', '13', '2000', '7', '8', '13', '345.0'\n"
                     "'2000', '2', '6', '14', '2000', '8', '9', '14', '100000.0'")
+        mock_isfile.return_value = False
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             pv = HourlyMWFile()
             self.assertFalse(mock_file.called)
 
+            mock_isfile.return_value = True
             pv.read_hourly_mw_file("TestFile")
             mock_file.assert_called_with("TestFile", 'r')
 
@@ -57,10 +60,12 @@ class TestHourlyMWFile(unittest.TestCase):
                 self.assertEqual(pv.get_mw_hour(UTC), float(line[8]))
 
     # Test bad header in file
-    def test_read_hourly_mw_file_fail_1(self):
+    @patch('os.path.isfile')
+    def test_read_hourly_mw_file_fail_1(self, mock_isfile):
         file_data= ("Bad Header\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'\n")
+        mock_isfile.return_value = True
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             with self.assertRaises(Exception) as context:
                 pv = HourlyMWFile("TestFile")
@@ -73,10 +78,12 @@ class TestHourlyMWFile(unittest.TestCase):
                              in str(context.exception))
 
     # Test bad delimiters
-    def test_read_hourly_mw_file_fail_2(self):
+    @patch('os.path.isfile')
+    def test_read_hourly_mw_file_fail_2(self, mock_isfile):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "X2000', '1', '3', '8', '2000', '2', '3', '8Y\n")
+        mock_isfile.return_value = True
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             with self.assertRaises(Exception) as context:
                 pv = HourlyMWFile("TestFile")
@@ -95,10 +102,12 @@ class TestHourlyMWFile(unittest.TestCase):
                              in str(context.exception))
 
     # Test bad date data
-    def test_read_hourly_mw_file_fail_3(self):
+    @patch('os.path.isfile')
+    def test_read_hourly_mw_file_fail_3(self, mock_isfile):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'BADYEAR', '1', '3', '8', '2000', '2', '3', '8', '12300.0'\n")
+        mock_isfile.return_value = True
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             with self.assertRaises(Exception) as context:
                 pv = HourlyMWFile("TestFile")
@@ -119,10 +128,12 @@ class TestHourlyMWFile(unittest.TestCase):
                              in str(context.exception))
 
     # Test bad MW data
-    def test_read_hourly_mw_file_fail_4(self):
+    @patch('os.path.isfile')
+    def test_read_hourly_mw_file_fail_4(self, mock_isfile):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'2000', '1', '3', '8', '2000', '2', '3', '8', 'BADMW'\n")
+        mock_isfile.return_value = True
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             with self.assertRaises(Exception) as context:
                 pv = HourlyMWFile("TestFile")
@@ -143,10 +154,12 @@ class TestHourlyMWFile(unittest.TestCase):
                              in str(context.exception))
 
     # Test wrong number of items in line
-    def test_read_hourly_mw_file_fail_5(self):
+    @patch('os.path.isfile')
+    def test_read_hourly_mw_file_fail_5(self, mock_isfile):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'2000', '1', '3', '8', '2000', '2', '3', '8', '23456.0', 'Extra'\n")
+        mock_isfile.return_value = True
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             with self.assertRaises(Exception) as context:
                 pv = HourlyMWFile("TestFile")
@@ -229,7 +242,8 @@ class TestHourlyMWFile(unittest.TestCase):
             self.assertTrue("File NoFile Line 100 Data validation error."
                              in str(context.exception))
 
-    def test_get_hourly_mw_capacity(self):
+    @patch('os.path.isfile')
+    def test_get_hourly_mw_capacity(self, mock_isfile):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'\n"
@@ -239,6 +253,7 @@ class TestHourlyMWFile(unittest.TestCase):
                     "'2000', '2', '5', '12', '2000', '6', '7', '12', '1.23'\n"
                     "'2000', '2', '6', '13', '2000', '7', '8', '13', '345.0'\n"
                     "'2000', '2', '6', '14', '2000', '8', '9', '14', '100000.0'\n")
+        mock_isfile.return_value = True
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             pv = HourlyMWFile("TestFile")
             self.assertTrue(mock_file.called)
@@ -280,13 +295,15 @@ class TestHourlyMWFile(unittest.TestCase):
             cap = pv.get_mw_hour(UTC)
             self.assertTrue(isnan(cap))
 
+    @patch('os.path.isfile')
     @patch('builtins.print')
-    def test_write_hourly_mw_file(self, mock_print):
+    def test_write_hourly_mw_file(self, mock_print, mock_isfile):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'\n"
                     "'2000', '1', '4', '9', '2000', '3', '4', '9', '1230.0'\n"
                     "'2000', '1', '4', '10', '2000', '4', '5', '10', '123.0'\n")
+        mock_isfile.return_value = True
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             pv = HourlyMWFile("TestFile")
             self.assertTrue(mock_file.called)
@@ -304,13 +321,15 @@ class TestHourlyMWFile(unittest.TestCase):
                      file=sys.stdout)]
         mock_print.assert_has_calls(calls, any_order = False)
 
+    @patch('os.path.isfile')
     @patch('builtins.print')
-    def test_write_hourly_mw_file_realfile(self, mock_print):
+    def test_write_hourly_mw_file_realfile(self, mock_print, mock_isfile):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'\n"
                     "'2000', '1', '4', '9', '2000', '3', '4', '9', '1230.0'\n"
                     "'2000', '1', '4', '10', '2000', '4', '5', '10', '123.0'\n")
+        mock_isfile.return_value = True
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             pv = HourlyMWFile("TestFile")
             self.assertTrue(mock_file.called)

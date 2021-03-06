@@ -27,9 +27,11 @@ class HourlyMWFile(YMDHData):
     def __init__(self, file_path = ""):
         super(HourlyMWFile, self).__init__()
         self.lines = []
+        self.files = []
+        self.file_modified = False
         self.token_count = len(self.file_header.split(", "))
 
-        if (file_path == ""):
+        if not os.path.isfile(file_path):
             return
         self.read_hourly_mw_file(file_path)
 
@@ -43,7 +45,7 @@ class HourlyMWFile(YMDHData):
             raise ValueError("File header is '%s', not '%s'.  Halting." %
                     (lines[0], self.file_header))
 
-        logging.info("Loaded %s" % path)
+        logging.debug("Loading %s" % path)
         for line_num, line in enumerate(lines[1:]):
             if ((line[0] != START_END) or (line[-1] != START_END)):
                 raise ValueError("File %s Line %d delimiters '%s' '%s' not '%s'"
@@ -61,6 +63,8 @@ class HourlyMWFile(YMDHData):
                 logging.warning("%s" % str(e))
                 raise ValueError("File %s Line %d Invalid format '%s'" %
                         (path, line_num+1, line))
+        self.files.append(path)
+        logging.info("Loaded %s" % path)
 
     # This looks a bit weird, but allows additional tokens to be
     # prepended to the UMT, local time, and capacity/load tokens.
@@ -97,16 +101,34 @@ class HourlyMWFile(YMDHData):
         data.extend(toks)
         self.lines.append(data)
         UTC = datetime(U_Y, U_M, U_D, hour=U_H)
-        self.add_ymdh(UTC, load, data, ignore_dup=True)
+        try:
+            self.add_ymdh(UTC, load, data, ignore_dup=False)
+        except ValueError:
+            self.add_ymdh(UTC, load, data, ignore_dup=True)
+            self.file_modified = True
 
     def get_mw_hour(self, UTC):
         return self.get_value(UTC)
 
     def duplicate_mw_hours(self, UTC, new_UTC, interval, adj):
+        self.file_modified = True
         self.duplicate_data(UTC, new_UTC, interval, adj)
 
     def adjust_mw_hours(self, UTC, interval, adj):
+        self.file_modified = True
         self.adjust_values(UTC, interval, adj)
+
+    def write_updated_file(self, outfile):
+        one_hour = timedelta(hours=1)
+        next_time = self.min_time
+        while next_time <= self.max_time:
+            data = self.get_data(next_time)
+            mw = data.val
+            line = data.data_array[0]
+            line[-1] = str(mw)
+            line_text = SEPARATOR.join([str(x) for x in line[2:]])
+            print("%s%s%s" % (START_END, line_text, START_END), file=outfile)
+            next_time = next_time + one_hour
 
     def write_hourly_mw_file(self, filepath=''):
         if len(self.lines) == 0:
@@ -119,10 +141,13 @@ class HourlyMWFile(YMDHData):
             outfile = open(filepath, 'w')
 
         print(self.file_header, file=outfile)
-        for data in self.lines:
-            # Do not print file name and line number
-            line_text = SEPARATOR.join([str(x) for x in data[2:]])
-            print("%s%s%s" % (START_END, line_text, START_END), file=outfile)
+        if self.file_modified:
+            self.write_updated_file(outfile)
+        else:
+            for data in self.lines:
+                # Do not print file name and line number
+                line_text = SEPARATOR.join([str(x) for x in data[2:]])
+                print("%s%s%s" % (START_END, line_text, START_END), file=outfile)
         if filepath != '':
             outfile.close()
 

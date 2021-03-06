@@ -31,38 +31,50 @@ FUEL_STORAGE = 'STORAGE'
 
 KEYWORDS="keywords"
 FILENAME="filename"
+FOSSFUEL="fossil"
 
-FILE_GEN_PV="gen_pv.txt"
-FILE_GEN_WIND="gen_wind.txt"
+FILE_GEN_PV="gen__pv.txt"
+FILE_GEN_WIND="gen__wind.txt"
 FILE_LOAD_DB="load_db.txt"
 FILE_GEN_DB="gen_db.txt"
 
 MAPPING_KEYWORDS = {
     FUEL_NUCLEAR : {KEYWORDS: ['nuclear'],
-                    FILENAME:""},
+                    FILENAME:"",
+                    FOSSFUEL:False},
     FUEL_HYDRO_RESERVOIR :
                    {KEYWORDS: ['hydro', "reservoir"],
-                    FILENAME:"gen_res.txt"},
+                    FILENAME:"gen__res.txt",
+                    FOSSFUEL:False},
     FUEL_HYDRO_RUN_OF_RVR :
                    {KEYWORDS: ['hydro', "run of river", "run-of-the-river"],
-                    FILENAME:"gen_rvr.txt"},
+                    FILENAME:"gen__rvr.txt",
+                    FOSSFUEL:False},
     FUEL_CO_GEN :  {KEYWORDS: ['waste heat', 'blast furnace', 'cogeneration'],
-                    FILENAME:"gen_co.txt"},
+                    FILENAME:"gen__co.txt",
+                    FOSSFUEL:False},
     FUEL_BIOMASS : {KEYWORDS: ['biomass', 'biogas', 'waste', 'landfill gas', 'digester gas', 'other'],
-                    FILENAME:"gen_bio.txt"},
+                    FILENAME:"gen__bio.txt",
+                    FOSSFUEL:False},
     FUEL_NATURAL_GAS :
                    {KEYWORDS: ['natural gas', 'dual fuel', 'gas', 'simple_cycle', 'combined_cycle'],
-                    FILENAME:""},
+                    FILENAME:"",
+                    FOSSFUEL:True},
     FUEL_OIL :     {KEYWORDS: ['fuel oil', 'diesel'],
-                    FILENAME:""},
+                    FILENAME:"",
+                    FOSSFUEL:True},
     FUEL_COAL:     {KEYWORDS: ['coal', 'coke'],
-                    FILENAME:""},
+                    FILENAME:"",
+                    FOSSFUEL:True},
     FUEL_WIND :    {KEYWORDS: ['wind'],
-                    FILENAME: FILE_GEN_WIND},
+                    FILENAME: FILE_GEN_WIND,
+                    FOSSFUEL:False},
     FUEL_SOLAR_PV: {KEYWORDS: ['solar', 'photoelectric', 'photovoltaic'],
-                    FILENAME: FILE_GEN_PV},
+                    FILENAME: FILE_GEN_PV,
+                    FOSSFUEL:False},
     FUEL_STORAGE : {KEYWORDS: ['battery', 'pumped'],
-                    FILENAME:""}
+                    FILENAME:"",
+                    FOSSFUEL:False},
 }
 
 def find_fuel(target):
@@ -76,5 +88,11 @@ def find_fuel(target):
 def get_filename(fuel):
     try:
         return MAPPING_KEYWORDS[fuel][FILENAME]
+    except KeyError:
+        return ''
+
+def get_fossil_fuel(fuel):
+    try:
+        return MAPPING_KEYWORDS[fuel][FOSSFUEL]
     except KeyError:
         return ''

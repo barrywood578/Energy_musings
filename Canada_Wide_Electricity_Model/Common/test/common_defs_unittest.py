@@ -43,8 +43,8 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(KEYWORDS, 'keywords')
         self.assertEqual(FILENAME, 'filename')
 
-        self.assertEqual(FILE_GEN_PV, 'gen_pv.txt')
-        self.assertEqual(FILE_GEN_WIND, 'gen_wind.txt')
+        self.assertEqual(FILE_GEN_PV, 'gen__pv.txt')
+        self.assertEqual(FILE_GEN_WIND, 'gen__wind.txt')
         self.assertEqual(FILE_LOAD_DB, 'load_db.txt')
         self.assertEqual(FILE_GEN_DB, 'gen_db.txt')
 
@@ -83,16 +83,29 @@ class TestConstants(unittest.TestCase):
 
     def test_get_filename(self):
         self.assertEqual(get_filename(FUEL_NUCLEAR), '')
-        self.assertEqual(get_filename(FUEL_HYDRO_RESERVOIR), 'gen_res.txt')
-        self.assertEqual(get_filename(FUEL_HYDRO_RUN_OF_RVR), 'gen_rvr.txt')
-        self.assertEqual(get_filename(FUEL_CO_GEN), 'gen_co.txt')
-        self.assertEqual(get_filename(FUEL_BIOMASS), 'gen_bio.txt')
+        self.assertEqual(get_filename(FUEL_HYDRO_RESERVOIR), 'gen__res.txt')
+        self.assertEqual(get_filename(FUEL_HYDRO_RUN_OF_RVR), 'gen__rvr.txt')
+        self.assertEqual(get_filename(FUEL_CO_GEN), 'gen__co.txt')
+        self.assertEqual(get_filename(FUEL_BIOMASS), 'gen__bio.txt')
         self.assertEqual(get_filename(FUEL_NATURAL_GAS), '')
         self.assertEqual(get_filename(FUEL_OIL), '')
         self.assertEqual(get_filename(FUEL_COAL), '')
-        self.assertEqual(get_filename(FUEL_WIND), 'gen_wind.txt')
-        self.assertEqual(get_filename(FUEL_SOLAR_PV), 'gen_pv.txt')
+        self.assertEqual(get_filename(FUEL_WIND), 'gen__wind.txt')
+        self.assertEqual(get_filename(FUEL_SOLAR_PV), 'gen__pv.txt')
         self.assertEqual(get_filename(FUEL_STORAGE), '')
+
+    def test_get_fossil_fuel(self):
+        self.assertEqual(get_fossil_fuel(FUEL_NUCLEAR), False)
+        self.assertEqual(get_fossil_fuel(FUEL_HYDRO_RESERVOIR), False)
+        self.assertEqual(get_fossil_fuel(FUEL_HYDRO_RUN_OF_RVR), False)
+        self.assertEqual(get_fossil_fuel(FUEL_CO_GEN), False)
+        self.assertEqual(get_fossil_fuel(FUEL_BIOMASS), False)
+        self.assertEqual(get_fossil_fuel(FUEL_NATURAL_GAS), True)
+        self.assertEqual(get_fossil_fuel(FUEL_OIL), True)
+        self.assertEqual(get_fossil_fuel(FUEL_COAL), True)
+        self.assertEqual(get_fossil_fuel(FUEL_WIND), False)
+        self.assertEqual(get_fossil_fuel(FUEL_SOLAR_PV), False)
+        self.assertEqual(get_fossil_fuel(FUEL_STORAGE), False)
 
     def test_constants_completeness(self):
         # The following lines confirm that all definitions in the
@@ -103,7 +116,7 @@ class TestConstants(unittest.TestCase):
             file_path = "Common/common_defs.py"
         with open(file_path, 'r') as tempfile:
             counts = [line.strip().count('=') for line in tempfile.readlines()]
-        self.assertEqual(sum(counts), 28)
+        self.assertEqual(sum(counts), 29)
 
 if __name__ == '__main__':
     unittest.main()

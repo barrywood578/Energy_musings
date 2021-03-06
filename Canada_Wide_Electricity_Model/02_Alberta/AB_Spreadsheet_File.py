@@ -240,11 +240,7 @@ def main(argv = None):
     ssheet.demand_file.write_hourly_mw_file()
     if options.asset_file_paths!= []:
         if options.gen_file_from_assets != '':
-            ssheet.gen_file.write_generator_file(options.gen_file_from_assets)
-        if options.actual_pv_solar_gen != '':
-            ssheet.write_fuel_gen_file("SOLAR_PV", options.actual_pv_solar_gen)
-        if options.actual_wind_gen != '':
-            ssheet.write_fuel_gen_file("WIND", options.actual_wind_gen)
+            ssheet.gen_file.write_generator_file(options.gen_file_from_assets, write_hourly_files=True)
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -23,9 +23,21 @@ cd ..
 
 cd 02_Alberta
 echo 'Starting Alberta...'
-./AB_Spreadsheet_File.py -x Hourly-Metered-Volumes-and-Pool-Price-and-AIL-01-2008-10-2020.xlsx -a CSD-Assets.xlsx -g gen_db_AB_2019.txt -p gen_pv_AB_actual.txt -w gen_wind.txt > load_db.txt
+./AB_Spreadsheet_File.py -x Hourly-Metered-Volumes-and-Pool-Price-and-AIL-01-2008-10-2020.xlsx -a CSD-Assets.xlsx -g gen_db_AB_2019.txt -p gen_pv_AB_actual.txt -w gen__wind.txt > load_db.txt
 check_rc 'Alberta'
 cd ..
+
+# NOTE, INFW: Saskatchewan and Manitoba are dependent on British Columbia data for now
+
+echo 'Starting Saskatchewan...'
+rm -f 03_Saskatchewan/load_db.txt
+Common/data_adapter.py -s 01_British_Columbia -t 03_Saskatchewan -r 0.3333333333 -l
+check_rc 'Saskatchewan'
+
+echo 'Starting Manitoba...'
+rm -f 04_Manitoba/load_db.txt
+Common/data_adapter.py -s 01_British_Columbia -t 04_Manitoba -r 0.3333333333 -l
+check_rc 'Manitoba'
 
 cd 05_Ontario
 echo 'Starting Ontario...'
@@ -55,7 +67,7 @@ cd 09_Prince_Edward_Island
 echo 'Starting Prince Edward Island...'
 ./PEI_Spreadsheet_Files.py -y 2020 -c PEI_Load_2020_01.csv -c PEI_Load_2020_02.csv -c PEI_Load_2020_03.csv -c PEI_Load_2020_04.csv -c PEI_Load_2020_05.csv -c PEI_Load_2020_06.csv -c PEI_Load_2020_07.csv -c PEI_Load_2020_08.csv -c PEI_Load_2020_09.csv -c PEI_Load_2020_10.csv -c PEI_Load_2020_11.csv -c PEI_Load_2020_12.csv > load_db.txt
 check_rc 'Prince Edward Island Load'
-./PEI_Spreadsheet_Files.py -y 2020 -c PEI_Wind_2020_01.csv -c PEI_Wind_2020_02.csv -c PEI_Wind_2020_03.csv -c PEI_Wind_2020_04.csv -c PEI_Wind_2020_05.csv -c PEI_Wind_2020_06.csv -c PEI_Wind_2020_07.csv -c PEI_Wind_2020_08.csv -c PEI_Wind_2020_09.csv -c PEI_Wind_2020_10.csv -c PEI_Wind_2020_11.csv -c PEI_Wind_2020_12.csv -n > gen_wind.txt
+./PEI_Spreadsheet_Files.py -y 2020 -c PEI_Wind_2020_01.csv -c PEI_Wind_2020_02.csv -c PEI_Wind_2020_03.csv -c PEI_Wind_2020_04.csv -c PEI_Wind_2020_05.csv -c PEI_Wind_2020_06.csv -c PEI_Wind_2020_07.csv -c PEI_Wind_2020_08.csv -c PEI_Wind_2020_09.csv -c PEI_Wind_2020_10.csv -c PEI_Wind_2020_11.csv -c PEI_Wind_2020_12.csv -n > gen__wind.txt
 check_rc 'Prince Edward Island Wind'
 cd ..
 
