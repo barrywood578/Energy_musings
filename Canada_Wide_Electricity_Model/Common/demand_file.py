@@ -27,12 +27,12 @@ from hourly_mw_file import HourlyMWFile
 class DemandFile(HourlyMWFile):
 
     def __init__(self, file_path = ""):
-        super(DemandFile, self).__init__()
+        super(DemandFile, self).__init__(file_path="")
         file_header_prefix = "File, LineNum, "
         self.file_header = file_header_prefix + self.file_header
         self.token_count += len(file_header_prefix.split(", ")) - 1
 
-        if (file_path == ""):
+        if not os.path.isfile(file_path):
             return
         self.read_hourly_mw_file(file_path)
 

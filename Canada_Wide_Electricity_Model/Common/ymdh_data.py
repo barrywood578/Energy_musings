@@ -57,12 +57,57 @@ class YMDHData(object):
         self.min_time = None
         self.max_time = None
 
+    def __iter__(self):
+        self.Ys = list(self.dbase.keys())
+        self.Ms = []
+        self.Ds = []
+        self.Hs = []
+        self.Y_i = 0
+        self.M_i = 0
+        self.D_i = 0
+        self.H_i = -1
+        if len(self.Ys) == 0:
+            return self
+        self.Y = self.Ys[self.Y_i]
+        self.Ms = list(self.dbase[self.Y].keys())
+        self.M = self.Ms[self.M_i]
+        self.Ds = list(self.dbase[self.Y][self.M].keys())
+        self.D = self.Ds[self.D_i]
+        self.Hs = list(self.dbase[self.Y][self.M][self.D].keys())
+        self.H = self.Hs[self.H_i]
+        return self
+
+    def __next__(self):
+        self.H_i += 1
+        if self.H_i >= len(self.Hs):
+            self.H_i = 0
+            self.D_i += 1
+            if self.D_i >= len(self.Ds):
+                self.D_i = 0
+                self.M_i += 1
+                if self.M_i >= len(self.Ms):
+                    self.M_i = 0
+                    self.Y_i += 1
+                    if self.Y_i >= len(self.Ys):
+                        raise StopIteration
+                    self.Y = self.Ys[self.Y_i]
+                    self.Ms = list(self.dbase[self.Y].keys())
+                self.M = self.Ms[self.M_i]
+                self.Ds = list(self.dbase[self.Y][self.M].keys())
+            self.D = self.Ds[self.D_i]
+            self.Hs = list(self.dbase[self.Y][self.M][self.D].keys())
+        self.H = self.Hs[self.H_i]
+        return self.dbase[self.Y][self.M][self.D][self.H]
+
     def _get_keys_from_time(self, UTC):
         y = str(UTC.year)
         m = str(UTC.month)
         d = str(UTC.day)
         h = str(UTC.hour)
         return y, m, d, h
+
+    def is_empty(self):
+        return self.dbase == {}
 
     def _determine_nearest_time(self, UTC):
         if len(self.dbase.keys()) == 0:
@@ -107,7 +152,7 @@ class YMDHData(object):
 
         if H in self.dbase[Y][M][D]:
             if ignore_dup:
-                self.dbase[Y][M][D][H] += va
+                self.dbase[Y][M][D][H] = self.dbase[Y][M][D][H] + va
             else:
                 raise ValueError("Duplicate line at time %s %s %s %s:00!"
                                  "Original data %s" %
@@ -129,14 +174,6 @@ class YMDHData(object):
             return self.dbase[Y][M][D][H]
         except:
             pass
-        #print("%s %s %s %s Not found" % (Y, M, D, H))
-        for Y in self.dbase.keys():
-            try:
-                #print("Trying %s %s %s %s" % (Y, M, D, H))
-                return self.dbase[Y][M][D][H]
-            except:
-                #print("%s %s %s %s Not Found" % (Y, M, D, H))
-                pass
         return VA(INVALID_VALUE)
 
     def duplicate_data(self, UTC, new_UTC, interval, adjustment=AdjustData()):

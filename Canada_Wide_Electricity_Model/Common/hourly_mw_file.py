@@ -26,9 +26,7 @@ class HourlyMWFile(YMDHData):
 
     def __init__(self, file_path = ""):
         super(HourlyMWFile, self).__init__()
-        self.lines = []
         self.files = []
-        self.file_modified = False
         self.token_count = len(self.file_header.split(", "))
 
         if not os.path.isfile(file_path):
@@ -99,57 +97,43 @@ class HourlyMWFile(YMDHData):
         U_Y, U_M, U_D, U_H, load = self.validate_fields(path, line_num, toks)
         data = [path, line_num]
         data.extend(toks)
-        self.lines.append(data)
         UTC = datetime(U_Y, U_M, U_D, hour=U_H)
         try:
             self.add_ymdh(UTC, load, data, ignore_dup=False)
         except ValueError:
             self.add_ymdh(UTC, load, data, ignore_dup=True)
-            self.file_modified = True
 
     def get_mw_hour(self, UTC):
         return self.get_value(UTC)
 
     def duplicate_mw_hours(self, UTC, new_UTC, interval, adj):
-        self.file_modified = True
         self.duplicate_data(UTC, new_UTC, interval, adj)
 
     def adjust_mw_hours(self, UTC, interval, adj):
-        self.file_modified = True
         self.adjust_values(UTC, interval, adj)
 
-    def write_updated_file(self, outfile):
-        one_hour = timedelta(hours=1)
-        next_time = self.min_time
-        while next_time <= self.max_time:
-            data = self.get_data(next_time)
-            mw = data.val
-            line = data.data_array[0]
-            line[-1] = str(mw)
-            line_text = SEPARATOR.join([str(x) for x in line[2:]])
-            print("%s%s%s" % (START_END, line_text, START_END), file=outfile)
-            next_time = next_time + one_hour
-
     def write_hourly_mw_file(self, filepath=''):
-        if len(self.lines) == 0:
-            if filepath == '':
-                print("Generator file is empty!")
-            return
         if filepath == '':
             outfile = sys.stdout
         else:
             outfile = open(filepath, 'w')
+        try:
 
-        print(self.file_header, file=outfile)
-        if self.file_modified:
-            self.write_updated_file(outfile)
-        else:
-            for data in self.lines:
-                # Do not print file name and line number
-                line_text = SEPARATOR.join([str(x) for x in data[2:]])
+            if self.is_empty():
+                if filepath == '':
+                    print("Generator file is empty!")
+                return
+            print(self.file_header, file=outfile)
+            for data in self:
+                mw = data.val
+                line = data.data_array[0]
+                line[-1] = str(mw)
+                line_text = SEPARATOR.join([str(x) for x in line[2:]])
                 print("%s%s%s" % (START_END, line_text, START_END), file=outfile)
-        if filepath != '':
-            outfile.close()
+
+        finally:
+            if filepath != '':
+                outfile.close()
 
 def create_parser():
     parser = OptionParser(description="Hourly MW File support.")
