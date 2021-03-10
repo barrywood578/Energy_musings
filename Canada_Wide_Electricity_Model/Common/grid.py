@@ -31,6 +31,7 @@ class grid(object):
 
     def create_base(self, start_utc, end_utc):
         interval = end_utc - start_utc
+        logging.debug("Creating data for %s, %s" % (start_utc.strftime(DATE_FORMAT), str(interval)))
         self.demand.create_base(start_utc, interval)
         self.generator.create_base(start_utc, interval)
 
@@ -109,7 +110,7 @@ def check_options(options):
         for fname, option in zip(fnames, options_f):
             f_path = os.path.join(path, fname)
             if os.path.isfile(f_path):
-                logging.info("Found file %s" % f_path)
+                logging.debug("Found file %s" % f_path)
                 option.append(f_path)
 
     if options.demand_path == [] or options.generator_path == []:
@@ -149,7 +150,6 @@ def main(argv = None):
     the_grid = grid(options.demand_path, options.generator_path)
     logging.info("Creating load/generation baseline...")
     the_grid.create_base(start,end)
-    logging.info("Running Files...")
     req_MWh, gen_MWh, ghg, f_ghg, hours, brown_hours = the_grid.run(start, end)
     logging.info("Demand is %10.2f TWh" % (req_MWh/1000000))
     logging.info("Generated %10.2f TWh, %10.2f MT CO2 fossil fuel emissions." %

@@ -44,10 +44,6 @@ class AB_Spreadsheet_File(object):
             self.read_xls_file(path)
             self.parse_asset_list(path)
 
-        self.fuel_gen_db = {}
-        for fuel in self.gen_file.gen_db.keys():
-            self.fuel_gen_db[fuel] = HourlyMWFile()
-
         for path in file_paths:
             try:
                 self.check_file(path)
@@ -148,7 +144,7 @@ class AB_Spreadsheet_File(object):
                         continue
                     ull = new_tuple[2:-1]
                     ull.append(tok)
-                    self.fuel_gen_db[fuel_list[idx]].add_mw_hour(path, line_num, ull)
+                    self.gen_file.add_mw_hour(fuel_list[idx], path, line_num, ull)
 
             except ValueError as e:
                 logging.warning("Error processing %s Line %d:%s" %
@@ -156,18 +152,13 @@ class AB_Spreadsheet_File(object):
                 logging.warning(e)
                 continue
 
-    def write_fuel_gen_file(self, fuel, path):
-        try:
-            self.fuel_gen_db[fuel].write_hourly_mw_file(path)
-        except:
-            pass
-
     def read_xls_file(self, path):
         self.lines = []
         self.read_excel(path)
 
     def parse_asset_list(self, path):
         title = ['ASSET_SHORT_NAME', 'ASSET_NAME', 'FUEL_TYPE', 'SUB_FUEL_TYPE', 'MAXIMUM_CAPABILITY']
+        cogen = ["Cancarb", "Caroline", "Gold Creek", "Judy Creek"]
         line = self.lines[0].strip()
         toks = [tok.strip() for tok in line[1:-1].split(SEPARATOR)]
         if False in [x == y for x, y in zip(title, toks)]:
@@ -180,11 +171,15 @@ class AB_Spreadsheet_File(object):
         for li_no, line in enumerate(self.lines[1:]):
             line = line.strip()
             toks = [tok.strip() for tok in line[1:-1].split(SEPARATOR)]
+            fuel = ""
             if "Solar" in toks[1]:
-                fuel = "SOLAR_PV"
-            elif toks[3] != '':
-                fuel = find_fuel(toks[3])
+                fuel = FUEL_SOLAR_PV
             else:
+                for item in cogen:
+                    if item in toks[1]:
+                       fuel = FUEL_CO_GEN
+                       break
+            if fuel == '':
                 fuel = find_fuel(toks[2])
             if fuel == '':
                 logging.warning("File %s line %d Could not determine fuel: '%s'"
@@ -215,11 +210,6 @@ def create_parser():
             action = 'store', type = 'string', default = '',
             help = 'File path for actual_pf_solar_gen file.',
             metavar = 'FILE')
-    parser.add_option('-w', '--wind',
-            dest = 'actual_wind_gen',
-            action = 'store', type = 'string', default = '',
-            help = 'File path for actual_wind_gen file.',
-            metavar = 'FILE')
     return parser
 
 def main(argv = None):
@@ -237,6 +227,7 @@ def main(argv = None):
 
     ssheet = AB_Spreadsheet_File(options.excel_file_paths,
                                  options.asset_file_paths)
+    MAPPING_KEYWORDS[FUEL_SOLAR_PV][FILENAME] = options.actual_pv_solar_gen
     ssheet.demand_file.write_hourly_mw_file()
     if options.asset_file_paths!= []:
         if options.gen_file_from_assets != '':

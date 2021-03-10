@@ -23,7 +23,12 @@ cd ..
 
 cd 02_Alberta
 echo 'Starting Alberta...'
-./AB_Spreadsheet_File.py -x Hourly-Metered-Volumes-and-Pool-Price-and-AIL-01-2008-10-2020.xlsx -a CSD-Assets.xlsx -g gen_db_AB_2019.txt -p gen_pv_AB_actual.txt -w gen__wind.txt > load_db.txt
+rm -f gen__bio.txt
+rm -f gen__co.txt
+rm -f gen__res.txt
+rm -f gen__pv_AB_actual.txt
+rm -f gen__wind.txt
+./AB_Spreadsheet_File.py -x Hourly-Metered-Volumes-and-Pool-Price-and-AIL-01-2008-10-2020.xlsx -a CSD-Assets.xlsx -g gen_db_AB_2019.txt -p gen__pv_AB_actual.txt > load_db.txt
 check_rc 'Alberta'
 cd ..
 

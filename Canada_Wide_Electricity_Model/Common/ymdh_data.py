@@ -58,23 +58,16 @@ class YMDHData(object):
         self.max_time = None
 
     def __iter__(self):
-        self.Ys = list(self.dbase.keys())
+        self.Ys = sorted(list(self.dbase.keys()))
         self.Ms = []
         self.Ds = []
         self.Hs = []
-        self.Y_i = 0
-        self.M_i = 0
-        self.D_i = 0
+        self.Y_i = -1
+        self.M_i = -1
+        self.D_i = -1
         self.H_i = -1
         if len(self.Ys) == 0:
             return self
-        self.Y = self.Ys[self.Y_i]
-        self.Ms = list(self.dbase[self.Y].keys())
-        self.M = self.Ms[self.M_i]
-        self.Ds = list(self.dbase[self.Y][self.M].keys())
-        self.D = self.Ds[self.D_i]
-        self.Hs = list(self.dbase[self.Y][self.M][self.D].keys())
-        self.H = self.Hs[self.H_i]
         return self
 
     def __next__(self):
@@ -99,12 +92,39 @@ class YMDHData(object):
         self.H = self.Hs[self.H_i]
         return self.dbase[self.Y][self.M][self.D][self.H]
 
+    def gen_func(self, UTC=None, interval=None, debug=False):
+        end_time = UTC + interval
+        skip = 0
+        for va in self:
+            dt = self._get_UTC_from_va(va)
+            if dt >= UTC and dt < end_time:
+                if debug:
+                    logging.debug("UTC %s dt %s end_time %s" % (UTC.strftime(DATE_FORMAT),
+                                                        dt.strftime(DATE_FORMAT),
+                                                        end_time.strftime(DATE_FORMAT)))
+                    logging.debug("skip %d" % skip)
+                    logging.debug("YIELD %f %s" % (va.val, ",".join([str(x) for x in va.data_array[0]])))
+                    skip = 0
+                yield va
+            else:
+                skip += 1
+            if dt >= end_time:
+                break
+
     def _get_keys_from_time(self, UTC):
         y = str(UTC.year)
         m = str(UTC.month)
         d = str(UTC.day)
         h = str(UTC.hour)
         return y, m, d, h
+
+    def _get_keys_from_va(self, va):
+        Y, M, D, H = va.data_array[0][-9:-5]
+        return Y, M, D, H
+
+    def _get_UTC_from_va(self, va):
+        y, m, d, h = [int(x) for x in self._get_keys_from_va(va)]
+        return datetime(y, m, d, hour=h)
 
     def is_empty(self):
         return self.dbase == {}
@@ -124,7 +144,8 @@ class YMDHData(object):
             for Y in sorted(self.dbase.keys()):
                 try:
                     val = self.dbase[Y][m][d][h]
-                    return datetime(int(Y), int(m), int(d), hour=int(h))
+                    ret = datetime(int(Y), int(m), int(d), hour=int(h))
+                    return ret
                 except KeyError:
                     pass
         raise ValueError("No other year has same Month/Day/Hour!")
@@ -139,6 +160,12 @@ class YMDHData(object):
             self.max_time = UTC
 
         va = VA(val, data)
+        if data != []:
+            date = self._get_UTC_from_va(va)
+            if date != UTC:
+                raise ValueError("Data %s does not match UTC %s" %
+                                 (date.strftime(DATE_FORMAT),
+                                  UTC.strftime(DATE_FORMAT)))
         Y, M, D, H = self._get_keys_from_time(UTC)
 
         if not Y in self.dbase:
@@ -168,7 +195,6 @@ class YMDHData(object):
         try:
             Y, M, D, H = self._get_keys_from_time(UTC)
         except:
-            #print("Could not get keys from time...")
             return VA(INVALID_VALUE)
         try:
             return self.dbase[Y][M][D][H]
@@ -176,29 +202,31 @@ class YMDHData(object):
             pass
         return VA(INVALID_VALUE)
 
-    def duplicate_data(self, UTC, new_UTC, interval, adjustment=AdjustData()):
-        hours = (interval.days * 24) + ceil(interval.seconds/3600.0)
-        for h_offset in range(0, hours):
-            src_UTC = UTC + timedelta(hours=h_offset)
-            trg_UTC = new_UTC + timedelta(hours=h_offset)
-            y, m, d, h = self._get_keys_from_time(src_UTC)
-            vl = copy.deepcopy(self.dbase[y][m][d][h])
+    def duplicate_data(self, UTC, new_UTC, interval, adjustment=AdjustData(),
+                             debug=False):
+        delta = new_UTC - UTC
+        for va in self.gen_func(UTC, interval, debug=debug):
+            Y, M, D, H = self._get_keys_from_va(va)
+            src_UTC = self._get_UTC_from_va(va)
+            trg_UTC = src_UTC + delta
+            vl = copy.deepcopy(va)
             newval = adjustment.adjust([vl.val])[0]
-            self.add_ymdh(trg_UTC, newval, [])
-            Y, M, D, H = self._get_keys_from_time(trg_UTC)
-            self.dbase[Y][M][D][H].data_array = vl.data_array
 
-    def adjust_values(self, UTC, interval, adj):
-        hours = (interval.days * 24) + ceil(interval.seconds/3600.0)
-        for h_offset in range(0, hours):
-            curtime = UTC + timedelta(hours=h_offset)
-            y, m, d, h = self._get_keys_from_time(curtime)
-            try:
-                newval = adj.adjust([self.dbase[y][m][d][h].val])[0]
-                self.dbase[y][m][d][h].val = newval
-            except KeyError as e:
-                logging.critical("Data does not exist for %s" % (curtime.strftime(DATE_FORMAT)))
-                raise e
+            ty, tm, td, th = self._get_keys_from_time(trg_UTC)
+            for da in vl.data_array:
+                da[-9] = ty
+                da[-8] = tm
+                da[-7] = td
+                da[-6] = th
+            #if debug:
+            #    print("Duplicate: src %s trg %s" % (src_UTC.strftime(DATE_FORMAT),
+            #                                        trg_UTC.strftime(DATE_FORMAT)))
+            self.add_ymdh(trg_UTC, newval, [])
+            self.dbase[ty][tm][td][th].data_array = vl.data_array
+
+    def adjust_values(self, UTC, interval, adj, debug=False):
+        for va in self.gen_func(UTC, interval, debug):
+            va.val = adj.adjust([va.val])[0]
 
     def verify_range(self, UTC, interval):
         hours = (interval.days * 24) + ceil(interval.seconds/3600.0)
@@ -234,10 +262,15 @@ class YMDHData(object):
                 val = self.dbase[y][m][d][h]
             except KeyError:
                 src = self._determine_nearest_time(targ)
-                self.duplicate_data(src, targ, one_hour)
+                self.duplicate_data(src, targ, one_hour, debug=True)
 
     def create_base(self, UTC, interval):
         missing = self.verify_range(UTC, interval)
+        if len(missing):
+            logging.debug("Base missing following intervals:")
+        else:
+            logging.debug("Base already present.")
         for miss_u, miss_i in missing:
+            logging.debug("    Start %s Interval %s" % (miss_u.strftime(DATE_FORMAT), str(miss_i)))
             self.copy_nearest(miss_u, miss_i)
 

@@ -16,7 +16,7 @@ import os
 import logging
 import copy
 from math import isnan
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from common_defs import *
 from hourly_mw_file import HourlyMWFile
 from adjust_data import AdjustData
@@ -29,7 +29,7 @@ class generator(object):
         except:
             self.ghg = 0.0
         self.tz_str = tz_string
-        self.gen_files = []
+        self.gen_files = [HourlyMWFile()]
         self.min_time = None
         self.max_time = None
         self.add_gen_file(gen_path)
@@ -38,10 +38,13 @@ class generator(object):
     # Each generator file supports exactly
     # the same date range as all the others.
     def add_gen_file(self, gen_path):
-        if not os.path.isfile(gen_path):
+        gen_file = HourlyMWFile(gen_path)
+        if gen_file.is_empty():
+            logging.debug("File %s is empty." % gen_path)
             return
 
-        gen_file = HourlyMWFile(gen_path)
+        if (len(self.gen_files) == 1) and self.gen_files[0].is_empty():
+            self.gen_files = []
 
         change = False
         if self.min_time is None:
@@ -50,7 +53,7 @@ class generator(object):
         if self.min_time > gen_file.min_time:
             self.min_time = gen_file.min_time
             change = True
-        if self.max_time > gen_file.max_time:
+        if self.max_time < gen_file.max_time:
             self.max_time = gen_file.max_time
             change = True
 
@@ -60,6 +63,23 @@ class generator(object):
                 gen.create_base(self.min_time, interval)
 
         self.gen_files.append(gen_file)
+
+    def add_mw_hour(self, path, line_num, UMT_Local_MW):
+        if len(self.gen_files) != 1:
+            raise ValueError("Cannot add mw hour to multiple generator files.")
+        dt = datetime(int(UMT_Local_MW[-9]), int(UMT_Local_MW[-8]), int(UMT_Local_MW[-7]),
+                      hour=int(UMT_Local_MW[-6]))
+        if self.min_time is None:
+            self.min_time = dt
+            self.max_time = dt
+        if self.min_time > dt:
+            self.min_time = dt
+        if self.max_time < dt:
+            self.max_time = dt
+        self.gen_files[0].add_mw_hour(path, line_num, UMT_Local_MW)
+
+    def is_empty(self):
+        return ((False not in ([x.is_empty() for x in self.gen_files])) or (self.gen_files == []))
 
 class generator_file(object):
     generator_file_header = "Fuel, Capacity, GHG_MWh, Timezone"
@@ -122,10 +142,21 @@ class generator_file(object):
             return
         self.gen_db[fuel] = generator(capacity, ghg, tz_str, gen_path=gen_file_path)
 
+    def add_mw_hour(self, fuel, path, line_num, UMT_Local_MW):
+        if fuel not in self.gen_db:
+            raise ValueError("Fuel not present, must add generator")
+        self.gen_db[fuel].add_mw_hour(path, line_num, UMT_Local_MW)
+
     def create_base(self, start_utc, interval):
         for fuel in self.gen_db.keys():
             for f in self.gen_db[fuel].gen_files:
-                logging.info("Creating base for %s : %s " % (fuel, f.files[0]))
+                if f.is_empty():
+                    continue
+                if f.files == []:
+                    fname = "NONAME"
+                else:
+                    fname = f.files[0]
+                logging.debug("Creating base for %10s : %s " % (fuel, fname))
                 f.create_base(start_utc, interval)
 
     def get_total_capacity(self, dt):
@@ -141,7 +172,11 @@ class generator_file(object):
     def generate(self, fuel, gen_mw, date):
         if self.gen_db[fuel].gen_files == []:
             mw = self.gen_db[fuel].mw
+        elif (len(self.gen_db[fuel].gen_files) == 1
+                and self.gen_db[fuel].gen_files[0].is_empty()):
+            mw = self.gen_db[fuel].mw
         else:
+            vals = [str(gen.get_value(date)) for gen in self.gen_db[fuel].gen_files]
             mw = sum(gen.get_value(date) for gen in self.gen_db[fuel].gen_files)
         mw = min(mw, gen_mw)
         return mw, mw * self.gen_db[fuel].ghg
@@ -180,19 +215,25 @@ class generator_file(object):
     # scaling according to size.
     def copy_missing_data(self, src):
         for fuel in self.gen_db.keys():
-            if len(self.gen_db[fuel].gen_files):
+            if not ((len(self.gen_db[fuel].gen_files) == 1)
+                    and self.gen_db[fuel].gen_files[0].is_empty()):
                 continue
+            self.gen_db[fuel].gen_files = []
             if fuel not in src.gen_db:
                 continue
-            if len(src.gen_db[fuel].gen_files) == 0:
+            if ((len(src.gen_db[fuel].gen_files) == 1)
+                and src.gen_db[fuel].gen_files[0].is_empty()):
                 continue
-            logging.info("Copying files for %s" % fuel)
+            ratio = self.gen_db[fuel].mw / src.gen_db[fuel].mw
+            adj = AdjustData(ratio=ratio)
+            logging.info("Copying files for %10s.  %10.2f MW / %10.2f MW ratio %f" %
+                        (fuel, self.gen_db[fuel].mw, src.gen_db[fuel].mw, ratio))
+            self.gen_db[fuel].min_time = src.gen_db[fuel].min_time
+            self.gen_db[fuel].max_time = src.gen_db[fuel].max_time
             for gen in src.gen_db[fuel].gen_files:
                 gen_file = copy.deepcopy(gen)
                 utc = src.gen_db[fuel].min_time
-                interval = src.gen_db[fuel].max_time - utc
-                ratio = self.gen_db[fuel].mw / src.gen_db[fuel].mw
-                adj = AdjustData(ratio=ratio)
+                interval = src.gen_db[fuel].max_time - utc + timedelta(hours=1)
                 gen_file.adjust_values(utc, interval, adj)
                 self.gen_db[fuel].gen_files.append(gen_file)
 
@@ -218,9 +259,9 @@ class generator_file(object):
                 if write_hourly_files and filepath != '' and MAPPING_KEYWORDS[fuel][FILENAME] != "":
                     base = os.path.dirname(filepath)
                     gen_fp = os.path.join(base, MAPPING_KEYWORDS[fuel][FILENAME])
-                    for h_file in self.gen_db[fuel].gen_files:
-                        h_file.write_hourly_mw_file(filepath = gen_fp)
-                    logging.info("Wrote %s'" % gen_fp)
+                    if not self.gen_db[fuel].is_empty():
+                        self.gen_db[fuel].gen_files[0].write_hourly_mw_file(filepath=gen_fp)
+                        logging.info("Wrote %s'" % gen_fp)
         finally:
             if filepath != '':
                 outfile.close()

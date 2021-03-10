@@ -109,8 +109,8 @@ class HourlyMWFile(YMDHData):
     def duplicate_mw_hours(self, UTC, new_UTC, interval, adj):
         self.duplicate_data(UTC, new_UTC, interval, adj)
 
-    def adjust_mw_hours(self, UTC, interval, adj):
-        self.adjust_values(UTC, interval, adj)
+    def adjust_mw_hours(self, UTC, interval, adj, debug=False):
+        self.adjust_values(UTC, interval, adj, debug)
 
     def write_hourly_mw_file(self, filepath=''):
         if filepath == '':
@@ -118,7 +118,6 @@ class HourlyMWFile(YMDHData):
         else:
             outfile = open(filepath, 'w')
         try:
-
             if self.is_empty():
                 if filepath == '':
                     print("Generator file is empty!")

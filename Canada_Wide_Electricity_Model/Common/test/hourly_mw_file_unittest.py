@@ -28,7 +28,8 @@ class TestHourlyMWFile(unittest.TestCase):
 
     def test_init(self):
         pv = HourlyMWFile()
-        self.assertEqual(pv.lines, [])
+        self.assertEqual(pv.files, [])
+        self.assertEqual(pv.token_count, 9)
 
     @patch('os.path.isfile')
     def test_read_hourly_mw_file_success(self, mock_isfile):
@@ -41,23 +42,30 @@ class TestHourlyMWFile(unittest.TestCase):
                     "'2000', '2', '5', '12', '2000', '6', '7', '12', '1.23'\n"
                     "'2000', '2', '6', '13', '2000', '7', '8', '13', '345.0'\n"
                     "'2000', '2', '6', '14', '2000', '8', '9', '14', '100000.0'")
-        mock_isfile.return_value = False
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
+            mock_isfile.return_value = False
             pv = HourlyMWFile()
             self.assertFalse(mock_file.called)
 
-            mock_isfile.return_value = True
+            mock_isfile.return_value = False
             pv.read_hourly_mw_file("TestFile")
             mock_file.assert_called_with("TestFile", 'r')
 
             lines = [line.strip() for line in file_data.split("\n")]
             lines = [[tok.strip() for tok in line[1:-1].split("', '")] for line in lines[1:]]
-            for li_no, line in enumerate(lines):
-                self.assertEqual(len(line), 9)
-                for i in range(0,len(line)):
-                    self.assertEqual(pv.lines[li_no][2+i], line[i])
+
+            for li_no, line in enumerate(lines[1:]):
+                all_toks = ["TestFile", str(li_no+2)]
+                all_toks.extend(line)
+                self.assertEqual(len(all_toks), 11)
+                data = pv.dbase[line[0]][line[1]][line[2]][line[3]]
+                print("Val %f Data %s" % (data.val, str(data.data_array[0])))
+                print("      Line %s" % str(all_toks))
+                self.assertEqual(len(data.data_array), 1)
+                for i, tok in enumerate(data.data_array[0]):
+                    self.assertEqual(str(tok), all_toks[i])
                 UTC = datetime(int(line[0]), int(line[1]), int(line[2]), hour=int(line[3]))
-                self.assertEqual(pv.get_mw_hour(UTC), float(line[8]))
+                self.assertEqual(pv.get_mw_hour(UTC), float(line[-1]))
 
     # Test bad header in file
     @patch('os.path.isfile')
@@ -297,12 +305,30 @@ class TestHourlyMWFile(unittest.TestCase):
 
     @patch('os.path.isfile')
     @patch('builtins.print')
+    def test_write_hourly_mw_file_empty(self, mock_print, mock_isfile):
+        file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)\n"
+                    "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
+                    "'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'\n"
+                    "'2000', '1', '3', '9', '2000', '3', '4', '9', '1230.0'\n"
+                    "'2000', '1', '3', '10', '2000', '4', '5', '10', '123.0'\n")
+        mock_isfile.return_value = False
+        with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
+            pv = HourlyMWFile()
+            self.assertFalse(mock_file.called)
+            pv.write_hourly_mw_file()
+            self.assertFalse(mock_file.called)
+            self.assertEqual(mock_print.call_count, 1)
+            calls = [call("Generator file is empty!")]
+            mock_print.assert_has_calls(calls, any_order = False)
+
+    @patch('os.path.isfile')
+    @patch('builtins.print')
     def test_write_hourly_mw_file(self, mock_print, mock_isfile):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'\n"
-                    "'2000', '1', '4', '9', '2000', '3', '4', '9', '1230.0'\n"
-                    "'2000', '1', '4', '10', '2000', '4', '5', '10', '123.0'\n")
+                    "'2000', '1', '3', '9', '2000', '3', '4', '9', '1230.0'\n"
+                    "'2000', '1', '3', '10', '2000', '4', '5', '10', '123.0'\n")
         mock_isfile.return_value = True
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             pv = HourlyMWFile("TestFile")
@@ -315,9 +341,9 @@ class TestHourlyMWFile(unittest.TestCase):
                      file=sys.stdout),
                  call("'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'",
                      file=sys.stdout),
-                 call("'2000', '1', '4', '9', '2000', '3', '4', '9', '1230.0'",
+                 call("'2000', '1', '3', '9', '2000', '3', '4', '9', '1230.0'",
                      file=sys.stdout),
-                 call("'2000', '1', '4', '10', '2000', '4', '5', '10', '123.0'",
+                 call("'2000', '1', '3', '10', '2000', '4', '5', '10', '123.0'",
                      file=sys.stdout)]
         mock_print.assert_has_calls(calls, any_order = False)
 
@@ -327,8 +353,8 @@ class TestHourlyMWFile(unittest.TestCase):
         file_data= ("UTC_Year, UTC_Month, UTC_Day, UTC_Hour, Year, Month, Day, Hour, Load(MW)\n"
                     "'2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'\n"
                     "'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'\n"
-                    "'2000', '1', '4', '9', '2000', '3', '4', '9', '1230.0'\n"
-                    "'2000', '1', '4', '10', '2000', '4', '5', '10', '123.0'\n")
+                    "'2000', '1', '3', '9', '2000', '3', '4', '9', '1230.0'\n"
+                    "'2000', '1', '3', '10', '2000', '4', '5', '10', '123.0'\n")
         mock_isfile.return_value = True
         with patch("builtins.open", mock_open(read_data=file_data)) as mock_file:
             pv = HourlyMWFile("TestFile")
@@ -342,9 +368,9 @@ class TestHourlyMWFile(unittest.TestCase):
                      file=mock_out()),
                  call("'2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'",
                      file=mock_out()),
-                 call("'2000', '1', '4', '9', '2000', '3', '4', '9', '1230.0'",
+                 call("'2000', '1', '3', '9', '2000', '3', '4', '9', '1230.0'",
                      file=mock_out()),
-                 call("'2000', '1', '4', '10', '2000', '4', '5', '10', '123.0'",
+                 call("'2000', '1', '3', '10', '2000', '4', '5', '10', '123.0'",
                      file=mock_out())]
             mock_print.assert_has_calls(calls, any_order = False)
 
