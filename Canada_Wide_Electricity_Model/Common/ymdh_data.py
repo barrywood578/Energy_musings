@@ -92,24 +92,41 @@ class YMDHData(object):
         self.H = self.Hs[self.H_i]
         return self.dbase[self.Y][self.M][self.D][self.H]
 
+    def _get_subset(self, keys, is_start, is_end, start, end):
+        ret = keys
+        if is_start and is_end:
+            keys = [x for x in keys if (int(x) >= start and int(x) <= end)]
+        elif is_start:
+            keys = [x for x in keys if int(x) >= start]
+        elif is_end:
+            keys = [x for x in keys if int(x) <= end]
+        return keys
+
     def gen_func(self, UTC=None, interval=None, debug=False):
-        end_time = UTC + interval
-        skip = 0
-        for va in self:
-            dt = self._get_UTC_from_va(va)
-            if dt >= UTC and dt < end_time:
-                if debug:
-                    logging.debug("UTC %s dt %s end_time %s" % (UTC.strftime(DATE_FORMAT),
-                                                        dt.strftime(DATE_FORMAT),
-                                                        end_time.strftime(DATE_FORMAT)))
-                    logging.debug("skip %d" % skip)
-                    logging.debug("YIELD %f %s" % (va.val, ",".join([str(x) for x in va.data_array[0]])))
-                    skip = 0
-                yield va
-            else:
-                skip += 1
-            if dt >= end_time:
-                break
+        start_time = UTC
+        end_time = UTC + interval - timedelta(hours=1)
+
+        Ys = sorted([x for x in self.dbase.keys() if (int(x) >= start_time.year and int(x) <= end_time.year)])
+        for Y in Ys:
+            i_Y = int(Y)
+            Ms = self._get_subset(self.dbase[Y].keys(),
+                                 start_time.year == i_Y,
+                                 end_time.year == i_Y,
+                                 start_time.month, end_time.month)
+            for M in Ms:
+                i_M = int(M)
+                Ds = self._get_subset(self.dbase[Y][M].keys(),
+                                     start_time.year == i_Y and start_time.month == i_M,
+                                     end_time.year == i_Y and end_time.month == i_M,
+                                     start_time.day, end_time.day)
+                for D in Ds:
+                    i_D = int(D)
+                    Hs = self._get_subset(self.dbase[Y][M][D].keys(),
+                                         start_time.year == i_Y and start_time.month == i_M and start_time.day == i_D,
+                                         end_time.year == i_Y and end_time.month == i_M and end_time.day == i_D,
+                                         start_time.hour, end_time.hour)
+                    for H in Hs:
+                        yield self.dbase[Y][M][D][H]
 
     def _get_keys_from_time(self, UTC):
         y = str(UTC.year)

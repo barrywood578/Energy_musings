@@ -207,36 +207,157 @@ class TestYMDHData(unittest.TestCase):
             for d_tok, y_tok in zip(data.data_array[0], file_data[i]):
                 self.assertEqual(d_tok, y_tok)
 
+    def test_get_subset(self):
+        def check_test(subset, exp_subset):
+            self.assertEqual(len(subset), len(exp_subset))
+            for x, y in zip(subset, exp_subset):
+                self.assertEqual(x, y)
+
+        data = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+        ymdh = YMDHData()
+        # checking first of 3 keys
+        testset = ymdh._get_subset(data, True, False, 5, 6)
+        exp_testset = data[5:]
+        check_test(testset, exp_testset)
+
+        # checking middle of 3 keys
+        testset = ymdh._get_subset(data, False, False, 5, 6)
+        exp_testset = data
+        check_test(testset, exp_testset)
+
+        # checking last of 3 keys
+        testset = ymdh._get_subset(data, False, True, 5, 6)
+        exp_testset = data[:7]
+        check_test(testset, exp_testset)
+
+        # checking first of 2 keys
+        testset = ymdh._get_subset(data, True, False, 5, 6)
+        exp_testset = data[5:]
+        check_test(testset, exp_testset)
+
+        # checking last of 2 keys
+        testset = ymdh._get_subset(data, False, True, 5, 6)
+        exp_testset = data[:7]
+        check_test(testset, exp_testset)
+
+        # checking only key, all values allowed
+        testset = ymdh._get_subset(data, True, True, 0, 9)
+        exp_testset = data
+        check_test(testset, exp_testset)
+
+        # checking only key, subrange allowed
+        testset = ymdh._get_subset(data, True, True, 5, 6)
+        exp_testset = data[5:7]
+        check_test(testset, exp_testset)
+
+        # checking only key, subrange allowed
+        testset = ymdh._get_subset(data, True, True, 5, 5)
+        exp_testset = data[5:6]
+        check_test(testset, exp_testset)
+
     def test_gen_func(self):
-        file_data= [['2000', '1', '3', '7', '2000', '1', '2', '7', '123000.0'],
-                    ['2000', '1', '3', '8', '2000', '2', '3', '8', '12300.0'],
-                    ['2000', '1', '4', '9', '2000', '3', '4', '9', '1230.0'],
-                    ['2000', '1', '4', '10', '2000', '4', '5', '10', '123.0'],
+        file_data= [['2000', '1', '1', '1', '2000', '1', '2', '7', '123000.0'],
+                    ['2000', '1', '1', '23', '2000', '2', '3', '8', '12300.0'],
+                    ['2000', '1', '2', '1', '2000', '3', '4', '9', '1230.0'],
+                    ['2000', '1', '30', '1', '2000', '4', '5', '10', '123.0'],
+                    ['2000', '1', '30', '23', '2000', '4', '5', '10', '123.0'],
                     ['2000', '2', '5', '11', '2000', '5', '6', '11', '12.3'],
                     ['2000', '2', '5', '12', '2000', '6', '7', '12', '1.23'],
                     ['2000', '2', '6', '13', '2000', '7', '8', '13', '345.0'],
-                    ['2000', '2', '6', '14', '2000', '8', '9', '14', '100000.0']]
+                    ['2000', '2', '6', '14', '2000', '8', '9', '14', '100000.0'],
+                    ['2000', '12', '1', '1', '2000', '5', '6', '11', '12.3'],
+                    ['2000', '12', '31', '5', '2000', '7', '8', '13', '345.0'],
+                    ['2000', '12', '31', '23', '2000', '6', '7', '12', '1.23'],
+                    ['2001', '1', '3', '7', '2000', '1', '2', '7', '123000.0'],
+                    ['2001', '1', '3', '8', '2000', '2', '3', '8', '12300.0'],
+                    ['2001', '1', '4', '9', '2000', '3', '4', '9', '1230.0'],
+                    ['2001', '1', '4', '10', '2000', '4', '5', '10', '123.0'],
+                    ['2001', '2', '5', '11', '2000', '5', '6', '11', '12.3'],
+                    ['2001', '2', '5', '12', '2000', '6', '7', '12', '1.23'],
+                    ['2001', '2', '6', '13', '2000', '7', '8', '13', '345.0'],
+                    ['2001', '2', '6', '14', '2000', '8', '9', '14', '100000.0'],
+                    ['2001', '12', '31', '1', '2000', '7', '8', '13', '345.0'],
+                    ['2001', '12', '31', '5', '2000', '7', '8', '13', '345.0'],
+                    ['2001', '12', '31', '23', '2000', '8', '9', '14', '100000.0']]
         ymdh = YMDHData()
         for data in file_data:
             UTC = datetime(int(data[0]), int(data[1]), int(data[2]), hour=int(data[3]))
             ymdh.add_ymdh(UTC, float(data[-1]), data)
 
-        start_date = datetime(2000, 1, 3, hour=8)
-        interval = timedelta(days=3)
-        i = 0
-        for data in ymdh.gen_func(start_date, interval):
-            i += 1
-            y, m, d, h = data.data_array[0][-9:-5]
-            Y, M, D, H = (int(x) for x in [y, m, d, h])
-            cur_time = datetime(Y, M, D, hour=H)
-            va = ymdh.get_data(cur_time)
-            self.assertTrue(data is va)
-            self.assertTrue(data is ymdh.dbase[y][m][d][h])
-            self.assertTrue(va is ymdh.dbase[y][m][d][h])
-            self.assertEqual(va.val, float(file_data[i][-1]))
-            for x in range(0, 9):
-                self.assertEqual(va.data_array[0][x], file_data[i][x])
-        self.assertEqual(i, 3)
+        count = 0
+        st_dt = datetime(2000, 1, 1, hour=0)
+        end_dt = datetime(2001, 1, 2, hour=0)
+        interval = end_dt - st_dt
+        print("Date: %s Interval %s EndDate %s" % (st_dt.strftime(DATE_FORMAT), str(interval),
+                                                   (st_dt + interval).strftime(DATE_FORMAT)))
+        for data in ymdh.gen_func(st_dt, interval):
+            print("    %d %s" % (count, ",".join(data.data_array[0])))
+            for x, y in zip(data.data_array[0], file_data[count]):
+                self.assertEqual(x, y)
+            dt = ymdh._get_UTC_from_va(data)
+            self.assertEqual(dt.year, 2000)
+            count += 1
+        self.assertEqual(count, 12)
+
+        count = 0
+        st_dt = datetime(2000, 12, 31, hour=23)
+        end_dt = datetime(2001, 1, 1, hour=0)
+        interval = end_dt - st_dt
+        print("Date: %s Interval %s EndDate %s" % (st_dt.strftime(DATE_FORMAT), str(interval),
+                                                   (st_dt + interval).strftime(DATE_FORMAT)))
+        for data in ymdh.gen_func(st_dt, interval):
+            print("    %d %s" % (count, ",".join(data.data_array[0])))
+            for x, y in zip(data.data_array[0], file_data[count+11]):
+                self.assertEqual(x, y)
+            dt = ymdh._get_UTC_from_va(data)
+            self.assertEqual(dt.year, 2000)
+            count += 1
+        self.assertEqual(count, 1)
+
+        count = 0
+        st_dt = datetime(2000, 2, 1, hour=0)
+        end_dt = datetime(2000, 3, 1, hour=0)
+        interval = end_dt - st_dt
+        print("Date: %s Interval %s EndDate %s" % (st_dt.strftime(DATE_FORMAT), str(interval),
+                                                   (st_dt + interval).strftime(DATE_FORMAT)))
+        for data in ymdh.gen_func(st_dt, interval):
+            print("    %d %s" % (count, ",".join(data.data_array[0])))
+            for x, y in zip(data.data_array[0], file_data[count+5]):
+                self.assertEqual(x, y)
+            dt = ymdh._get_UTC_from_va(data)
+            self.assertEqual(dt.year, 2000)
+            count += 1
+        self.assertEqual(count, 4)
+
+        count = 0
+        st_dt = datetime(2001, 1, 1, hour=0)
+        end_dt = datetime(2002, 1, 1, hour=0)
+        interval = end_dt - st_dt
+        print("Date: %s Interval %s EndDate %s" % (st_dt.strftime(DATE_FORMAT), str(interval),
+                                                   (st_dt + interval).strftime(DATE_FORMAT)))
+        for data in ymdh.gen_func(st_dt, interval):
+            print("    %d %s" % (count, ",".join(data.data_array[0])))
+            for x, y in zip(data.data_array[0], file_data[count+12]):
+                self.assertEqual(x, y)
+            dt = ymdh._get_UTC_from_va(data)
+            self.assertEqual(dt.year, 2001)
+            count += 1
+        self.assertEqual(count, 11)
+
+        count = 0
+        st_dt = datetime(2001, 12, 1, hour=0)
+        end_dt = datetime(2002, 1, 1, hour=0)
+        interval = end_dt - st_dt
+        print("Date: %s Interval %s EndDate %s" % (st_dt.strftime(DATE_FORMAT), str(interval),
+                                                   (st_dt + interval).strftime(DATE_FORMAT)))
+        for data in ymdh.gen_func(st_dt, interval):
+            print("    %d %s" % (count, ",".join(data.data_array[0])))
+            for x, y in zip(data.data_array[0], file_data[count+20]):
+                self.assertEqual(x, y)
+            dt = ymdh._get_UTC_from_va(data)
+            self.assertEqual(dt.year, 2001)
+            count += 1
+        self.assertEqual(count, 3)
 
     def test_get_value(self):
         UTC = datetime(2006, 1, 2, hour=5)

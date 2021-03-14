@@ -312,15 +312,15 @@ class TestDemandFile(unittest.TestCase):
             adj = AdjustData()
             print("Srctime: %s" % src_time.strftime(DATE_FORMAT))
             for data in df:
-                print("B4 %f" % data.val)
+                print("B4 %f %s" % (data.val, ",".join([str(x) for x in data.data_array[0]])))
             df.duplicate_mw_hours(src_time, new_time, interval, adj)
             for data in df:
-                print("DUP %f" % data.val)
+                print("DUP %f %s" % (data.val, ",".join([str(x) for x in data.data_array[0]])))
             adj = AdjustData(abs_adj=50, ratio=0.9)
             print("Srctime: %s" % src_time.strftime(DATE_FORMAT))
             df.adjust_mw_hours(src_time, interval, adj)
             for data in df:
-                print("ADJ %f" % data.val)
+                print("ADJ %f %s" % (data.val, ",".join([str(x) for x in data.data_array[0]])))
 
             for hour in range (0, 24):
                 self.assertEqual(df.dbase["2006"]["1"]["1"][str(hour)].val,
