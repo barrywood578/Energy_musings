@@ -6,7 +6,7 @@
     Each file line contains:
     Universal Coordinated Time (UCT) Year, Month, Day, Hour
     Local Year, Month, Day, Hour
-    Power in kilowatts, to one decimal place
+    Power in megawatts, to one decimal place
              =========
 """
 
@@ -120,7 +120,7 @@ class HourlyMWFile(YMDHData):
         try:
             if self.is_empty():
                 if filepath == '':
-                    print("Generator file is empty!")
+                    print("Hourly MW file is empty!")
                 return
             print(self.file_header, file=outfile)
             for data in self:

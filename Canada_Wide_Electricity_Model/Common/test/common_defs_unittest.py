@@ -6,7 +6,6 @@
 """
 
 import os
-import path
 from common_defs import *
 import unittest
 from math import isnan

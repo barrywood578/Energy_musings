@@ -318,7 +318,7 @@ class TestHourlyMWFile(unittest.TestCase):
             pv.write_hourly_mw_file()
             self.assertFalse(mock_file.called)
             self.assertEqual(mock_print.call_count, 1)
-            calls = [call("Generator file is empty!")]
+            calls = [call("Hourly MW file is empty!")]
             mock_print.assert_has_calls(calls, any_order = False)
 
     @patch('os.path.isfile')
