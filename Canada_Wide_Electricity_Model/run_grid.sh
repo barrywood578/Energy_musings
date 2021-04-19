@@ -16,6 +16,7 @@ function check_rc(){
         fi
         echo ---------------------------------------
 }
+
 echo 'Starting British Columbia...'
 Common/grid.py -d 01_British_Columbia/load_db.txt -g 01_British_Columbia/gen_db.txt -s "2019-01-01 00:00" -e "2019-12-31 23:00" > /dev/null
 check_rc 'British Columbia'
@@ -59,3 +60,13 @@ check_rc 'Newfoundland and Labrador'
 echo 'Starting Canada...'
 Common/grid.py -m 01_British_Columbia -m 02_Alberta -m 03_Saskatchewan -m 04_Manitoba -m 05_Ontario -m 06_Quebec -m 07_New_Brunswick -m 08_Nova_Scotia -m 09_Prince_Edward_Island -m 10_Newfoundland_and_Labrador -s "2019-01-01 00:00" -e "2019-12-31 23:00" > /dev/null
 check_rc 'Canada'
+
+if test -a Transportation/gen_db.txt || test -a Transportation/load_db.txt; then
+	echo 'Starting Transportation only...'
+	Common/grid.py -m Transportation -s "2019-01-01 00:00" -e "2019-12-31 23:00" > /dev/null
+	check_rc 'Transportation only'
+	echo 'Starting Canada plus Transportation...'
+	Common/grid.py -m 01_British_Columbia -m 02_Alberta -m 03_Saskatchewan -m 04_Manitoba -m 05_Ontario -m 06_Quebec -m 07_New_Brunswick -m 08_Nova_Scotia -m 09_Prince_Edward_Island -m 10_Newfoundland_and_Labrador -m Transportation -s "2019-01-01 00:00" -e "2019-12-31 23:00" > /dev/null
+	check_rc 'Canada plus Transportation'
+fi
+

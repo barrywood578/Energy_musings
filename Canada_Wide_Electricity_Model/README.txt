@@ -35,6 +35,11 @@ A one year grid simulation is run for each province, and then a
 simulation is run for all of Canada, by the following script:
 ./run_grid.sh
 
+If data has been generated for the Transportation directory,
+the script will also run an all-Canada simulation plus Transporation
+load and generation.  See the Transportation directory README
+for details on creating load and generation files.
+
 -------------
 DATA ASSEMBLY
 -------------
