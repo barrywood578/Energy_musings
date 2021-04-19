@@ -1,0 +1,17 @@
+Transportation Scenarios
+
+Electrification of transportation requires very little electricity in
+comparison to the current amount of fuel used, as the efficiency of current
+ICE is low (20% for gasoline engines, 30% for diesel).  The current defaults
+are based on computations from Transportation_Energy_Estimate.xlsx.
+defaults for the amount of energy are based on 2020 consumption statistics
+from Stats Canada.
+
+Transport_Data_Gen.py is used to create load files for charging electric
+vehicles, and an associated generation file to meet that load.  These files
+can then be included in the run_grid.sh script to see how tranportation affects
+overall GHG emissions in Canada.
+
+Example invokation of Transport_Data_Gen.py:
+
+./Transport_Data_Gen.py -y 2019 -e 600 -s 22 -c 8 -g gen_db.txt -d load_db.txt -f NATGAS
