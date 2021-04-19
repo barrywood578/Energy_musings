@@ -42,6 +42,7 @@ class grid(object):
         f_ghg = 0.0
         hours = 0
         brown_hours = 0
+        brown_diff = 0.0
         interval = end_utc - start_utc 
         hours = interval.days * 24 + ceil(interval.seconds / 3600) + 1
         logging.info("Run from %s to %s.  %d hours." % ( start_utc.strftime(DATE_FORMAT),
@@ -54,8 +55,10 @@ class grid(object):
                 raise ValueError("No load for UTC %s" % start_utc.strftime(DATE_FORMAT))
             req_MWh += load
             if (load > capacity):
-                load = capacity
                 brown_hours += 1
+                brown_diff = max(brown_diff, load - capacity)
+                load = capacity
+                
             gen_ghg, foss_ghg, gen_db = self.generator.get_ghg_emissions(load, start_utc)
             gen_MWh += load
             ghg += gen_ghg
@@ -69,7 +72,7 @@ class grid(object):
             print(op)
 
             start_utc += timedelta(hours=1)
-        return req_MWh, gen_MWh, ghg, f_ghg, hours, brown_hours
+        return req_MWh, gen_MWh, ghg, f_ghg, hours, brown_hours, brown_diff
 
 def create_parser():
     parser = OptionParser(description="Grid support.")
@@ -150,13 +153,16 @@ def main(argv = None):
     the_grid = grid(options.demand_path, options.generator_path)
     logging.info("Creating load/generation baseline...")
     the_grid.create_base(start,end)
-    req_MWh, gen_MWh, ghg, f_ghg, hours, brown_hours = the_grid.run(start, end)
+    req_MWh, gen_MWh, ghg, f_ghg, hours, brown_hours, brown_diff = the_grid.run(start, end)
     logging.info("Demand is %10.2f TWh" % (req_MWh/1000000))
     logging.info("Generated %10.2f TWh, %10.2f MT CO2 fossil fuel emissions." %
-            (gen_MWh/1000000, f_ghg/1000000))
-    logging.info("                          %10.2f MT CO2 total emissions." % (ghg/1000000))
-    if (brown_hours != 0):
+            (gen_MWh/1000000, f_ghg/1E9))
+    logging.info("                          %10.2f MT CO2 total emissions." % (ghg/1E9))
+    # If the maximum difference between load and supply is 10 kW,
+    # fuggetaboutit...
+    if ((brown_hours != 0) and (brown_diff > 0.01)):
         logging.info("Demand exceeded supply for %d hours out of %d." % (brown_hours, hours))
+        logging.info("Maximum deficiency was %f MW." % brown_diff)
 
 if __name__ == '__main__':
     sys.exit(main())
