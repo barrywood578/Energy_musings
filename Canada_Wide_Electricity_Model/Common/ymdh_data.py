@@ -165,7 +165,8 @@ class YMDHData(object):
                     return ret
                 except KeyError:
                     pass
-        raise ValueError("No other year has same Month/Day/Hour!")
+        raise ValueError("No other year has same Month/Day/Hour!\n%s-%s-%s-%s"
+                         % (y, m, d, h))
 
     def add_ymdh(self, UTC, val, data, ignore_dup=False):
         if self.min_time is None:
