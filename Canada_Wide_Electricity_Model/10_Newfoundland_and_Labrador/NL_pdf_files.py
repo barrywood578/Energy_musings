@@ -15,7 +15,6 @@ import operator
 import sys
 import os
 import logging
-import wget
 from urllib.parse import urlparse
 import fitz
 from datetime import datetime, timedelta
