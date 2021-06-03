@@ -13,8 +13,8 @@ delta X of 1 pixel and a delta y of 1 pixel.
 Additional processing, as embodied in NS_Spreadsheet_files.py, was necessary
 to convert mutiple data points to a single data value for each hour.
 
-Only the first 11 months of data are available for 2020.  
-December 2020 values will be added in the new year.
-
 Data was captured using the following command:
 ./NS_Spreadsheet_Files.py -a -y 2020 > load_db_NS.txt
+
+INFW: Data for 2021 January through May has been captured.  In future,
+      additional baseline demand data may be available.

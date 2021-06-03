@@ -15,11 +15,11 @@ Load and Wind files used exactly the same calibration.
 Additional processing, as embodied in PEI_Spreadsheet_files.py, was necessary
 to convert mutiple data points to a single data value for each hour.
 
-Only the first 11 months of data are available for 2020.  
-December 2020 values will be added in the new year.
+NOTE: Additional load and wind data has been captured for 2021 January-May.
+      This may be added to the data available in future.
 
 Data was captured using the following command:
-./PEI_Spreadsheet_Files.py -y 2020 -c PEI_Load_2020_01.csv -c PEI_Load_2020_02.csv -c PEI_Load_2020_03.csv -c PEI_Load_2020_04.csv -c PEI_Load_2020_05.csv -c PEI_Load_2020_06.csv -c PEI_Load_2020_07.csv -c PEI_Load_2020_08.csv -c PEI_Load_2020_09.csv -c PEI_Load_2020_10.csv -c PEI_Load_2020_11.csv > load_db_PEI.txt
+./PEI_Spreadsheet_Files.py -y 2020 -c PEI_Load_2020_01.csv -c PEI_Load_2020_02.csv -c PEI_Load_2020_03.csv -c PEI_Load_2020_04.csv -c PEI_Load_2020_05.csv -c PEI_Load_2020_06.csv -c PEI_Load_2020_07.csv -c PEI_Load_2020_08.csv -c PEI_Load_2020_09.csv -c PEI_Load_2020_10.csv -c PEI_Load_2020_11.csv -c PEI_Load_2020_12.csv > load_db_PEI.txt
 
 Also captured was wind generation data for PEI, using the following command:
-./PEI_Spreadsheet_Files.py -y 2020 -c PEI_Wind_2020_01.csv -c PEI_Wind_2020_02.csv -c PEI_Wind_2020_03.csv -c PEI_Wind_2020_04.csv -c PEI_Wind_2020_05.csv -c PEI_Wind_2020_06.csv -c PEI_Wind_2020_07.csv -c PEI_Wind_2020_08.csv -c PEI_Wind_2020_09.csv -c PEI_Wind_2020_10.csv -c PEI_Wind_2020_11.csv > gen_wind_PEI_actual.txt
+./PEI_Spreadsheet_Files.py -y 2020 -c PEI_Wind_2020_01.csv -c PEI_Wind_2020_02.csv -c PEI_Wind_2020_03.csv -c PEI_Wind_2020_04.csv -c PEI_Wind_2020_05.csv -c PEI_Wind_2020_06.csv -c PEI_Wind_2020_07.csv -c PEI_Wind_2020_08.csv -c PEI_Wind_2020_09.csv -c PEI_Wind_2020_10.csv -c PEI_Wind_2020_11.csv -c PEI_Wind_2020_12.csv > gen_wind_PEI_actual.txt

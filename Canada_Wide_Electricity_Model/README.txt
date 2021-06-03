@@ -1,14 +1,22 @@
 PYTHON PACKAGES
+- Anaconda environment manager
 - Revision 3.8 of python
 - openpyxl
-- pytz(?)
+- pytz
 - PyMuPDF
+- lxml
+- urllib3
 
 ------
 STATUS
 ------
-Correlating model results for cross-Canada electricity grid
-with public statistics.
+- Model results have been correlated with 2019 GHG emissions data for
+  electricity generation from the Government of Canada (~60 MT CO2)
+- Currently investigating electrification of
+  - Vehicles
+  - Industrial/manufacturing processes
+  - Home heating/cooling
+  - CCUS
 
 -------------------
 ORIGINAL DATA FILES
@@ -57,6 +65,6 @@ NOTE: run_load_data_assembly.sh MUST be executed before run_gen_data_assembly.sh
 
 NOTE: <KEY_FILE_NAME> is a file containing the key for the PVWatts web
 service on its first line.  This file is not necessary, but will result
-in faster execution and allow unlimited execution in a day.i
+in faster execution and allow unlimited execution in a day.
 Key files are available for free.  Refer to 'api_key'
 at https://developer.nrel.gov/docs/solar/pvwatts/v6/ for more information.
