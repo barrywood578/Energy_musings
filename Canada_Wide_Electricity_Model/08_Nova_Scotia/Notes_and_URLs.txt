@@ -16,5 +16,9 @@ to convert mutiple data points to a single data value for each hour.
 Data was captured using the following command:
 ./NS_Spreadsheet_Files.py -a -y 2020 > load_db_NS.txt
 
-INFW: Data for 2021 January through May has been captured.  In future,
-      additional baseline demand data may be available.
+INFW: Data for 2021 January through December has been captured.  This data
+      was tested using the following command:
+
+      ./NS_Spreadsheet_Files.py -a -y 2021 > load_db_NS.txt
+
+      In future, additional baseline demand data may be available.
