@@ -11,7 +11,7 @@ wget -r -c -l 2 --limit-rate=30k http://www.pub.nl.ca/applications/IslandInterco
 The demand file was extracted from the resulting directory, www.pub.nl.ca,
 using the following command:
 
-./NL_pdf_files.py -d www.pub.nl.ca -l > load_db_NL.txt 2> example_output.txt
+./NL_pdf_files.py -d www.pub.nl.ca -l > load_db.txt 2> example_output.txt
 
 As per the above, example output can be found in "example_output.txt"
 

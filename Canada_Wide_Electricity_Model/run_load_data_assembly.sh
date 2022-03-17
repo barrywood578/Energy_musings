@@ -76,9 +76,9 @@ echo 'Starting Prince Edward Island...'
 check_rc 'Prince Edward Island Load 2020'
 ./PEI_Spreadsheet_Files.py -y 2020 -c PEI_Wind_2020_01.csv -c PEI_Wind_2020_02.csv -c PEI_Wind_2020_03.csv -c PEI_Wind_2020_04.csv -c PEI_Wind_2020_05.csv -c PEI_Wind_2020_06.csv -c PEI_Wind_2020_07.csv -c PEI_Wind_2020_08.csv -c PEI_Wind_2020_09.csv -c PEI_Wind_2020_10.csv -c PEI_Wind_2020_11.csv -c PEI_Wind_2020_12.csv -n > gen__wind.txt
 check_rc 'Prince Edward Island Wind 2020'
-./PEI_Spreadsheet_Files.py -y 2021 -c PEI_Load_2021_01.csv -c PEI_Load_2021_02.csv -c PEI_Load_2021_03.csv -c PEI_Load_2021_04.csv -c PEI_Load_2021_05.csv > load_db_2021.txt
+./PEI_Spreadsheet_Files.py -y 2021 -c PEI_Load_2021_01.csv -c PEI_Load_2021_02.csv -c PEI_Load_2021_03.csv -c PEI_Load_2021_04.csv -c PEI_Load_2021_05.csv -c PEI_Load_2021_06.csv -c PEI_Load_2021_07.csv -c PEI_Load_2021_08.csv -c PEI_Load_2021_09.csv -c PEI_Load_2021_10.csv -c PEI_Load_2021_11.csv -c PEI_Load_2021_12.csv > load_db_2021.txt
 check_rc 'Prince Edward Island Load 2021'
-./PEI_Spreadsheet_Files.py -y 2021 -c PEI_Wind_2021_01.csv -c PEI_Wind_2021_02.csv -c PEI_Wind_2021_03.csv -c PEI_Wind_2021_04.csv -c PEI_Wind_2021_05.csv -n > gen__wind_2021.txt
+./PEI_Spreadsheet_Files.py -y 2021 -c PEI_Wind_2021_01.csv -c PEI_Wind_2021_02.csv -c PEI_Wind_2021_03.csv -c PEI_Wind_2021_04.csv -c PEI_Wind_2021_05.csv -c PEI_Wind_2021_06.csv -c PEI_Wind_2021_07.csv -c PEI_Wind_2021_08.csv -c PEI_Wind_2021_09.csv -c PEI_Wind_2021_10.csv -c PEI_Wind_2021_11.csv -c PEI_Wind_2021_12.csv -n > gen__wind_2021.txt
 check_rc 'Prince Edward Island Wind 2021'
 cd ..
 
